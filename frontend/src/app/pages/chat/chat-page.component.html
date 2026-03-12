@@ -117,18 +117,19 @@
       </div>
     </section>
 
-    <form class="composer" (ngSubmit)="submitQuestion()">
+    <form class="composer" (submit)="$event.preventDefault()">
       <mat-form-field appearance="outline" class="composer-field">
         <mat-label>Ask from uploaded documents</mat-label>
         <textarea
           matInput
           rows="3"
           [formControl]="questionControl"
+          (keydown)="handleComposerKeydown($event)"
           placeholder="What does the documentation say about...?"
         ></textarea>
       </mat-form-field>
 
-      <button mat-flat-button color="primary" type="submit" [disabled]="questionControl.invalid || isAsking()">
+      <button mat-flat-button color="primary" type="button" (click)="submitQuestion()" [disabled]="isAsking()">
         Send
       </button>
     </form>

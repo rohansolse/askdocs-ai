@@ -124,7 +124,12 @@ export class ChatPageComponent {
 
   submitQuestion(): void {
     const question = this.questionControl.value.trim();
-    if (!question || this.isAsking()) {
+    if (this.isAsking()) {
+      return;
+    }
+
+    if (!question) {
+      this.errorMessage.set('Enter a question before sending.');
       return;
     }
 
@@ -187,6 +192,13 @@ export class ChatPageComponent {
           });
         }
       });
+  }
+
+  handleComposerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.submitQuestion();
+    }
   }
 
   trackByChat(index: number, chat: ChatHistory): number {
