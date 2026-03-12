@@ -1,0 +1,99 @@
+<div class="chat-shell">
+  <aside class="panel-card history-panel">
+    <div class="history-header">
+      <div>
+        <h2 class="section-title">Chats</h2>
+        <p class="section-subtitle">Reloadable local history stored in PostgreSQL.</p>
+      </div>
+      <button mat-stroked-button type="button" (click)="startNewChat()">
+        <mat-icon>add_comment</mat-icon>
+        New chat
+      </button>
+    </div>
+
+    <div class="loading-state" *ngIf="historyLoading()">
+      <mat-spinner diameter="30"></mat-spinner>
+    </div>
+
+    <mat-nav-list *ngIf="!historyLoading() && chats().length">
+      <a
+        mat-list-item
+        href=""
+        *ngFor="let chat of chats(); trackBy: trackByChat"
+        [class.active-chat]="chat.id === selectedChatId()"
+        (click)="$event.preventDefault(); selectChat(chat.id)"
+      >
+        <div matListItemTitle>{{ chat.title }}</div>
+        <div matListItemLine>
+          {{ chat.messages.length }} messages • {{ chat.createdAt | date: 'short' }}
+        </div>
+      </a>
+    </mat-nav-list>
+
+    <div class="empty-state" *ngIf="!historyLoading() && !chats().length">
+      No chats yet. Ask a question once documents are uploaded.
+    </div>
+  </aside>
+
+  <section class="panel-card conversation-panel">
+    <header class="conversation-header">
+      <div>
+        <p class="eyebrow">Grounded answers only</p>
+        <h1 class="section-title">
+          {{ selectedChat?.title || 'New local RAG conversation' }}
+        </h1>
+        <p class="section-subtitle">
+          The assistant should respond only from retrieved document chunks.
+        </p>
+      </div>
+    </header>
+
+    <div class="messages">
+      <div class="empty-state" *ngIf="!renderedMessages.length && !isAsking()">
+        Ask a question about your uploaded PDFs.
+      </div>
+
+      <article
+        class="message"
+        *ngFor="let message of renderedMessages; trackBy: trackByMessage"
+        [class.message-user]="message.role === 'user'"
+        [class.message-assistant]="message.role === 'assistant'"
+      >
+        <div class="message-role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</div>
+        <div class="message-content">{{ message.content }}</div>
+      </article>
+
+      <div class="assistant-loading" *ngIf="isAsking()">
+        <mat-spinner diameter="22"></mat-spinner>
+        Generating grounded response...
+      </div>
+    </div>
+
+    <section class="context-panel" *ngIf="latestContext().length">
+      <h3>Retrieved context</h3>
+      <div class="context-chip" *ngFor="let item of latestContext()">
+        {{ item.documentName }} • chunk {{ item.chunkIndex }} • {{ item.similarity | number: '1.2-2' }}
+      </div>
+    </section>
+
+    <form class="composer" (ngSubmit)="submitQuestion()">
+      <mat-form-field appearance="outline" class="composer-field">
+        <mat-label>Ask from uploaded documents</mat-label>
+        <textarea
+          matInput
+          rows="3"
+          [formControl]="questionControl"
+          placeholder="What does the documentation say about...?"
+        ></textarea>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="questionControl.invalid || isAsking()">
+        <mat-icon>send</mat-icon>
+        Send
+      </button>
+    </form>
+
+    <p class="status-error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  </section>
+</div>
+

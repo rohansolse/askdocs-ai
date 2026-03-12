@@ -1,0 +1,27 @@
+<div class="layout">
+  <mat-toolbar class="toolbar">
+    <div class="brand">
+      <div class="brand-badge">AD</div>
+      <div>
+        <div class="brand-title">AskDocs AI</div>
+        <div class="brand-subtitle">Local-first documentation assistant</div>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <a mat-button routerLink="/documents" routerLinkActive="active-link">
+        <mat-icon>upload_file</mat-icon>
+        Documents
+      </a>
+      <a mat-button routerLink="/chat" routerLinkActive="active-link">
+        <mat-icon>forum</mat-icon>
+        Chat
+      </a>
+    </nav>
+  </mat-toolbar>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+

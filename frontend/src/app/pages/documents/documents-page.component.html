@@ -1,0 +1,66 @@
+<div class="page-shell documents-page">
+  <section class="hero panel-card">
+    <div class="hero-copy">
+      <p class="eyebrow">Document ingestion</p>
+      <h1 class="hero-title">Upload PDFs and turn them into local RAG context.</h1>
+      <p class="section-subtitle">
+        Files are parsed locally through the backend, chunked, embedded with Ollama, and stored in
+        PostgreSQL with pgvector.
+      </p>
+    </div>
+
+    <div class="hero-actions">
+      <input #fileInput type="file" accept="application/pdf" hidden (change)="onFileSelected($event)">
+      <button mat-flat-button color="primary" type="button" (click)="fileInput.click()">
+        <mat-icon>attach_file</mat-icon>
+        Choose PDF
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="uploadDocument()"
+        [disabled]="!selectedFile() || isUploading()"
+      >
+        <mat-icon>cloud_upload</mat-icon>
+        Upload
+      </button>
+      <div class="file-name" *ngIf="selectedFile() as file">{{ file.name }}</div>
+    </div>
+
+    <mat-progress-bar
+      *ngIf="isUploading() && uploadProgress() !== null"
+      mode="determinate"
+      [value]="uploadProgress()!"
+    ></mat-progress-bar>
+
+    <p class="status-error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
+  </section>
+
+  <section class="panel-card documents-panel">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Uploaded documents</h2>
+        <p class="section-subtitle">Each upload becomes searchable document chunks in the vector store.</p>
+      </div>
+      <div class="document-count">{{ documents().length }} total</div>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading()">
+      <mat-spinner diameter="34"></mat-spinner>
+    </div>
+
+    <div class="empty-state" *ngIf="!isLoading() && !documents().length">
+      No documents uploaded yet. Start by adding a PDF above.
+    </div>
+
+    <mat-list *ngIf="!isLoading() && documents().length">
+      <mat-list-item *ngFor="let document of documents(); trackBy: trackByDocument">
+        <div matListItemTitle>{{ document.originalName }}</div>
+        <div matListItemLine>
+          {{ document.chunkCount }} chunks • {{ document.uploadedAt | date: 'medium' }}
+        </div>
+      </mat-list-item>
+    </mat-list>
+  </section>
+</div>
+
