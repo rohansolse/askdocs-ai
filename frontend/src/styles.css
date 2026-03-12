@@ -66,9 +66,58 @@ body {
   color: var(--warn);
 }
 
+.message-content-rich :is(p, .chat-table-wrap) {
+  margin: 0;
+}
+
+.message-content-rich p + p,
+.message-content-rich p + .chat-table-wrap,
+.message-content-rich .chat-table-wrap + p,
+.message-content-rich .chat-table-wrap + .chat-table-wrap {
+  margin-top: 0.95rem;
+}
+
+.message-content-rich .chat-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #bcc5cf;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.message-content-rich .chat-table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  border: 1px solid #bcc5cf;
+}
+
+.message-content-rich .chat-table th,
+.message-content-rich .chat-table td {
+  padding: 0.8rem 0.95rem;
+  text-align: left;
+  border: 1px solid #c7d0d9;
+  vertical-align: top;
+}
+
+.message-content-rich .chat-table th {
+  background: #eef1f4;
+  color: #243140;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.message-content-rich .chat-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.message-content-rich .chat-table tbody tr:nth-child(even) td {
+  background: #fafbfd;
+}
+
 @media (max-width: 768px) {
   .panel-card {
     border-radius: 18px;
   }
 }
-

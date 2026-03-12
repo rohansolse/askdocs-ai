@@ -217,6 +217,32 @@ export class ChatPageComponent {
     }
   }
 
+  async copyMessage(content: string): Promise<void> {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(content);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = content;
+        textarea.setAttribute('readonly', 'true');
+        textarea.style.position = 'absolute';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      this.snackBar.open('Copied to clipboard.', 'Close', {
+        duration: 2000
+      });
+    } catch (error) {
+      this.snackBar.open('Failed to copy message.', 'Close', {
+        duration: 2500
+      });
+    }
+  }
+
   trackByChat(index: number, chat: ChatHistory): number {
     return chat.id;
   }

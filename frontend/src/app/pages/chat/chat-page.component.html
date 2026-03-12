@@ -1,73 +1,81 @@
 <div class="chat-shell">
   <aside class="sidebar-stack">
     <section class="panel-card scope-panel">
-      <div class="panel-header">
-        <div>
-          <h2 class="section-title">Document scope</h2>
-          <p class="section-subtitle">{{ selectedDocumentsCountLabel() }}</p>
-        </div>
-        <mat-checkbox
-          *ngIf="documents().length"
-          [checked]="allDocumentsSelected()"
-          (change)="toggleSelectAll($event.checked)"
-        >
-          All
-        </mat-checkbox>
-      </div>
-
-      <div class="loading-state" *ngIf="documentsLoading()">
-        <mat-spinner diameter="28"></mat-spinner>
-      </div>
-
-      <div class="empty-state compact-empty" *ngIf="!documentsLoading() && !documents().length">
-        No documents available yet. Upload PDFs first.
-      </div>
-
-      <div class="scope-list" *ngIf="!documentsLoading() && documents().length">
-        <label class="scope-item" *ngFor="let document of documents(); trackBy: trackByDocument">
-          <mat-checkbox
-            [checked]="isDocumentSelected(document.id)"
-            (change)="toggleDocumentSelection(document.id, $event.checked)"
-          ></mat-checkbox>
-          <div class="scope-copy">
-            <div class="scope-name">{{ document.originalName }}</div>
-            <div class="scope-meta">{{ document.chunkCount }} chunks</div>
+      <div class="scope-panel-header">
+        <div class="panel-header">
+          <div>
+            <h2 class="section-title">Document scope</h2>
+            <p class="section-subtitle">{{ selectedDocumentsCountLabel() }}</p>
           </div>
-        </label>
+          <mat-checkbox
+            *ngIf="documents().length"
+            [checked]="allDocumentsSelected()"
+            (change)="toggleSelectAll($event.checked)"
+          >
+            All
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <div class="scope-panel-body">
+        <div class="loading-state" *ngIf="documentsLoading()">
+          <mat-spinner diameter="28"></mat-spinner>
+        </div>
+
+        <div class="empty-state compact-empty" *ngIf="!documentsLoading() && !documents().length">
+          No documents available yet. Upload PDFs first.
+        </div>
+
+        <div class="scope-list" *ngIf="!documentsLoading() && documents().length">
+          <label class="scope-item" *ngFor="let document of documents(); trackBy: trackByDocument">
+            <mat-checkbox
+              [checked]="isDocumentSelected(document.id)"
+              (change)="toggleDocumentSelection(document.id, $event.checked)"
+            ></mat-checkbox>
+            <div class="scope-copy">
+              <div class="scope-name">{{ document.originalName }}</div>
+              <div class="scope-meta">{{ document.chunkCount }} chunks</div>
+            </div>
+          </label>
+        </div>
       </div>
     </section>
 
     <section class="panel-card history-panel">
-      <div class="history-header">
-        <div>
-          <h2 class="section-title">Chats</h2>
-        </div>
-        <button mat-stroked-button type="button" (click)="startNewChat()">
-          New chat
-        </button>
-      </div>
-
-      <div class="loading-state" *ngIf="historyLoading()">
-        <mat-spinner diameter="30"></mat-spinner>
-      </div>
-
-      <mat-nav-list *ngIf="!historyLoading() && chats().length">
-        <a
-          mat-list-item
-          href=""
-          *ngFor="let chat of chats(); trackBy: trackByChat"
-          [class.active-chat]="chat.id === selectedChatId()"
-          (click)="$event.preventDefault(); selectChat(chat.id)"
-        >
-          <div matListItemTitle>{{ chat.title }}</div>
-          <div matListItemLine>
-            {{ chat.messages.length }} messages • {{ chat.createdAt | date: 'short' }}
+      <div class="history-panel-header">
+        <div class="history-header">
+          <div>
+            <h2 class="section-title">Chats</h2>
           </div>
-        </a>
-      </mat-nav-list>
+          <button mat-stroked-button type="button" (click)="startNewChat()">
+            New chat
+          </button>
+        </div>
+      </div>
 
-      <div class="empty-state compact-empty" *ngIf="!historyLoading() && !chats().length">
-        No chats yet. Ask a question once documents are uploaded.
+      <div class="history-panel-body">
+        <div class="loading-state" *ngIf="historyLoading()">
+          <mat-spinner diameter="30"></mat-spinner>
+        </div>
+
+        <mat-nav-list *ngIf="!historyLoading() && chats().length">
+          <a
+            mat-list-item
+            href=""
+            *ngFor="let chat of chats(); trackBy: trackByChat"
+            [class.active-chat]="chat.id === selectedChatId()"
+            (click)="$event.preventDefault(); selectChat(chat.id)"
+          >
+            <div matListItemTitle>{{ chat.title }}</div>
+            <div matListItemLine>
+              {{ chat.messages.length }} messages • {{ chat.createdAt | date: 'short' }}
+            </div>
+          </a>
+        </mat-nav-list>
+
+        <div class="empty-state compact-empty" *ngIf="!historyLoading() && !chats().length">
+          No chats yet. Ask a question once documents are uploaded.
+        </div>
       </div>
     </section>
   </aside>
@@ -99,7 +107,23 @@
         [class.message-user]="message.role === 'user'"
         [class.message-assistant]="message.role === 'assistant'"
       >
-        <div class="message-role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</div>
+        <div class="message-header">
+          <div class="message-role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</div>
+          <button
+            class="copy-button"
+            type="button"
+            (click)="copyMessage(message.content)"
+            [attr.aria-label]="'Copy ' + (message.role === 'user' ? 'user message' : 'assistant reply')"
+            title="Copy"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9 9h9v11H9zM6 4h9v3h-2V6H8v9H7a1 1 0 0 1-1-1z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+        </div>
         <div
           class="message-content"
           [class.message-content-rich]="message.role === 'assistant'"
