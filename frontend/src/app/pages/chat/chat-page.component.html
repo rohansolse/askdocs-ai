@@ -101,7 +101,11 @@
         [class.message-assistant]="message.role === 'assistant'"
       >
         <div class="message-role">{{ message.role === 'user' ? 'You' : 'Assistant' }}</div>
-        <div class="message-content">{{ message.content }}</div>
+        <div
+          class="message-content"
+          [class.message-content-rich]="message.role === 'assistant'"
+          [innerHTML]="message.role === 'assistant' ? (message.content | chatRichText) : message.content"
+        ></div>
       </article>
 
       <div class="assistant-loading" *ngIf="isAsking()">

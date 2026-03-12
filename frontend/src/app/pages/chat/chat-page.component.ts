@@ -19,6 +19,7 @@ import {
 } from '../../core/services/chat-api.service';
 import { DocumentApiService, DocumentSummary } from '../../core/services/document-api.service';
 import { DocumentSelectionService } from '../../core/services/document-selection.service';
+import { ChatRichTextPipe } from '../../shared/pipes/chat-rich-text.pipe';
 
 @Component({
   selector: 'app-chat-page',
@@ -33,7 +34,8 @@ import { DocumentSelectionService } from '../../core/services/document-selection
     MatInputModule,
     MatListModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    ChatRichTextPipe
   ],
   templateUrl: './chat-page.component.html',
   styleUrl: './chat-page.component.css',
