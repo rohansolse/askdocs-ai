@@ -431,7 +431,7 @@ brew install tesseract
 
 ### `CREATE EXTENSION vector` fails
 
-`pgvector` is not installed in your PostgreSQL server. Install `pgvector` for your PostgreSQL version first, then rerun the schema.
+This means the local PostgreSQL server on your machine does not have the `pgvector` extension package installed yet. The project does use `pgvector`; you only need this step if `CREATE EXTENSION vector` fails in your environment. Install `pgvector` for your PostgreSQL version first, then rerun the schema.
 
 ## Notes For Future Improvements
 
