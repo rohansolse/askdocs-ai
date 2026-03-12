@@ -4,7 +4,7 @@
       <div class="panel-header">
         <div>
           <h2 class="section-title">Document scope</h2>
-          <p class="section-subtitle">Choose one document, multiple documents, or all documents.</p>
+          <p class="section-subtitle">{{ selectedDocumentsCountLabel() }}</p>
         </div>
         <mat-checkbox
           *ngIf="documents().length"
@@ -41,7 +41,6 @@
       <div class="history-header">
         <div>
           <h2 class="section-title">Chats</h2>
-          <p class="section-subtitle">Reloadable local history stored in PostgreSQL.</p>
         </div>
         <button mat-stroked-button type="button" (click)="startNewChat()">
           New chat

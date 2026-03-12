@@ -108,6 +108,21 @@ export class ChatPageComponent {
     return selectedDocuments.map((document) => document.originalName).join(', ');
   });
 
+  readonly selectedDocumentsCountLabel = computed(() => {
+    const total = this.documents().length;
+    const selected = this.selectedDocuments().length;
+
+    if (!total) {
+      return '0 selected';
+    }
+
+    if (selected === total) {
+      return `All ${total} selected`;
+    }
+
+    return `${selected} of ${total} selected`;
+  });
+
   selectChat(chatId: number): void {
     this.selectedChatId.set(chatId);
     this.pendingMessages.set([]);
