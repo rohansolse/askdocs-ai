@@ -1,60 +1,102 @@
 <div class="chat-shell">
-  <aside class="panel-card history-panel">
-    <div class="history-header">
-      <div>
-        <h2 class="section-title">Chats</h2>
-        <p class="section-subtitle">Reloadable local history stored in PostgreSQL.</p>
-      </div>
-      <button mat-stroked-button type="button" (click)="startNewChat()">
-        New chat
-      </button>
-    </div>
-
-    <div class="loading-state" *ngIf="historyLoading()">
-      <mat-spinner diameter="30"></mat-spinner>
-    </div>
-
-    <mat-nav-list *ngIf="!historyLoading() && chats().length">
-      <a
-        mat-list-item
-        href=""
-        *ngFor="let chat of chats(); trackBy: trackByChat"
-        [class.active-chat]="chat.id === selectedChatId()"
-        (click)="$event.preventDefault(); selectChat(chat.id)"
-      >
-        <div matListItemTitle>{{ chat.title }}</div>
-        <div matListItemLine>
-          {{ chat.messages.length }} messages • {{ chat.createdAt | date: 'short' }}
+  <aside class="sidebar-stack">
+    <section class="panel-card scope-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="section-title">Document scope</h2>
+          <p class="section-subtitle">Choose one document, multiple documents, or all documents.</p>
         </div>
-      </a>
-    </mat-nav-list>
+        <mat-checkbox
+          *ngIf="documents().length"
+          [checked]="allDocumentsSelected()"
+          (change)="toggleSelectAll($event.checked)"
+        >
+          All
+        </mat-checkbox>
+      </div>
 
-    <div class="empty-state" *ngIf="!historyLoading() && !chats().length">
-      No chats yet. Ask a question once documents are uploaded.
-    </div>
+      <div class="loading-state" *ngIf="documentsLoading()">
+        <mat-spinner diameter="28"></mat-spinner>
+      </div>
+
+      <div class="empty-state compact-empty" *ngIf="!documentsLoading() && !documents().length">
+        No documents available yet. Upload PDFs first.
+      </div>
+
+      <div class="scope-list" *ngIf="!documentsLoading() && documents().length">
+        <label class="scope-item" *ngFor="let document of documents(); trackBy: trackByDocument">
+          <mat-checkbox
+            [checked]="isDocumentSelected(document.id)"
+            (change)="toggleDocumentSelection(document.id, $event.checked)"
+          ></mat-checkbox>
+          <div class="scope-copy">
+            <div class="scope-name">{{ document.originalName }}</div>
+            <div class="scope-meta">{{ document.chunkCount }} chunks</div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel-card history-panel">
+      <div class="history-header">
+        <div>
+          <h2 class="section-title">Chats</h2>
+          <p class="section-subtitle">Reloadable local history stored in PostgreSQL.</p>
+        </div>
+        <button mat-stroked-button type="button" (click)="startNewChat()">
+          New chat
+        </button>
+      </div>
+
+      <div class="loading-state" *ngIf="historyLoading()">
+        <mat-spinner diameter="30"></mat-spinner>
+      </div>
+
+      <mat-nav-list *ngIf="!historyLoading() && chats().length">
+        <a
+          mat-list-item
+          href=""
+          *ngFor="let chat of chats(); trackBy: trackByChat"
+          [class.active-chat]="chat.id === selectedChatId()"
+          (click)="$event.preventDefault(); selectChat(chat.id)"
+        >
+          <div matListItemTitle>{{ chat.title }}</div>
+          <div matListItemLine>
+            {{ chat.messages.length }} messages • {{ chat.createdAt | date: 'short' }}
+          </div>
+        </a>
+      </mat-nav-list>
+
+      <div class="empty-state compact-empty" *ngIf="!historyLoading() && !chats().length">
+        No chats yet. Ask a question once documents are uploaded.
+      </div>
+    </section>
   </aside>
 
   <section class="panel-card conversation-panel">
     <header class="conversation-header">
       <div>
         <p class="eyebrow">Grounded answers only</p>
-        <h1 class="section-title">
-          {{ selectedChat?.title || 'New local RAG conversation' }}
-        </h1>
+        <h1 class="section-title">{{ conversationTitle() }}</h1>
         <p class="section-subtitle">
           The assistant should respond only from retrieved document chunks.
         </p>
       </div>
     </header>
 
+    <section class="active-context">
+      <div class="active-context-label">Current context</div>
+      <div class="active-context-value">{{ selectedDocumentsLabel() }}</div>
+    </section>
+
     <div class="messages">
-      <div class="empty-state" *ngIf="!renderedMessages.length && !isAsking()">
+      <div class="empty-state" *ngIf="!renderedMessages().length && !isAsking()">
         Ask a question about your uploaded PDFs.
       </div>
 
       <article
         class="message"
-        *ngFor="let message of renderedMessages; trackBy: trackByMessage"
+        *ngFor="let message of renderedMessages(); trackBy: trackByMessage"
         [class.message-user]="message.role === 'user'"
         [class.message-assistant]="message.role === 'assistant'"
       >
@@ -64,7 +106,7 @@
 
       <div class="assistant-loading" *ngIf="isAsking()">
         <mat-spinner diameter="22"></mat-spinner>
-        Generating grounded response...
+        Please wait for a reply...
       </div>
     </div>
 
@@ -91,6 +133,7 @@
       </button>
     </form>
 
+    <p class="status-error" *ngIf="selectionErrorMessage()">{{ selectionErrorMessage() }}</p>
     <p class="status-error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   </section>
 </div>

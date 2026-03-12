@@ -38,9 +38,19 @@
     <div class="section-head">
       <div>
         <h2 class="section-title">Uploaded documents</h2>
-        <p class="section-subtitle">Each upload becomes searchable document chunks in the vector store.</p>
+        <p class="section-subtitle">
+          Each upload becomes searchable document chunks in the vector store.
+        </p>
       </div>
-      <div class="document-count">{{ documents().length }} total</div>
+      <div class="section-actions" *ngIf="documents().length">
+        <mat-checkbox
+          [checked]="allSelected()"
+          (change)="toggleSelectAll($event.checked)"
+        >
+          Select All
+        </mat-checkbox>
+        <div class="document-count">{{ selectionSummary() }}</div>
+      </div>
     </div>
 
     <div class="loading-state" *ngIf="isLoading()">
@@ -53,6 +63,12 @@
 
     <mat-list *ngIf="!isLoading() && documents().length">
       <mat-list-item *ngFor="let document of documents(); trackBy: trackByDocument">
+        <mat-checkbox
+          matListItemMeta
+          [checked]="isDocumentSelected(document.id)"
+          (change)="toggleDocumentSelection(document.id, $event.checked)"
+          [aria-label]="'Select ' + document.originalName"
+        ></mat-checkbox>
         <div matListItemTitle>{{ document.originalName }}</div>
         <div matListItemLine>
           {{ document.chunkCount }} chunks • {{ document.uploadedAt | date: 'medium' }}

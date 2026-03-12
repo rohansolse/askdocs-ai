@@ -1,15 +1,17 @@
 import { HttpEventType } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs';
 import { DocumentApiService, DocumentSummary } from '../../core/services/document-api.service';
+import { DocumentSelectionService } from '../../core/services/document-selection.service';
 
 @Component({
   selector: 'app-documents-page',
@@ -18,6 +20,7 @@ import { DocumentApiService, DocumentSummary } from '../../core/services/documen
     CommonModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatListModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
@@ -29,15 +32,36 @@ import { DocumentApiService, DocumentSummary } from '../../core/services/documen
 })
 export class DocumentsPageComponent {
   private readonly documentApi = inject(DocumentApiService);
+  private readonly documentSelection = inject(DocumentSelectionService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly documents = signal<DocumentSummary[]>([]);
   readonly isLoading = signal(false);
   readonly isUploading = signal(false);
   readonly uploadProgress = signal<number | null>(null);
   readonly selectedFile = signal<File | null>(null);
   readonly errorMessage = signal('');
+  readonly documents = this.documentSelection.documents;
+  readonly selectedDocumentIds = this.documentSelection.selectedDocumentIds;
+  readonly allSelected = this.documentSelection.allSelected;
+  readonly selectionSummary = computed(() => {
+    const total = this.documents().length;
+    const selected = this.selectedDocumentIds().length;
+
+    if (!total) {
+      return 'No documents available';
+    }
+
+    if (selected === total) {
+      return 'All documents selected';
+    }
+
+    if (!selected) {
+      return 'No documents selected';
+    }
+
+    return `${selected} of ${total} selected`;
+  });
 
   ngOnInit(): void {
     this.loadDocuments();
@@ -97,6 +121,18 @@ export class DocumentsPageComponent {
     return document.id;
   }
 
+  isDocumentSelected(documentId: number): boolean {
+    return this.selectedDocumentIds().includes(documentId);
+  }
+
+  toggleSelectAll(checked: boolean): void {
+    this.documentSelection.setAllSelected(checked);
+  }
+
+  toggleDocumentSelection(documentId: number, checked: boolean): void {
+    this.documentSelection.toggleDocument(documentId, checked);
+  }
+
   private loadDocuments(): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
@@ -108,7 +144,7 @@ export class DocumentsPageComponent {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: (documents) => this.documents.set(documents),
+        next: (documents) => this.documentSelection.setDocuments(documents),
         error: (error) => {
           this.errorMessage.set(error?.error?.message || 'Failed to load documents.');
         }

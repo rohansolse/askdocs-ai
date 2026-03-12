@@ -59,14 +59,26 @@ const buildGroundedMessages = (question, contextChunks) => {
   ];
 };
 
-const askQuestion = async ({ question, chatId }) => {
+const askQuestion = async ({ question, chatId, selectedDocumentIds: rawSelectedDocumentIds }) => {
   const trimmedQuestion = question?.trim();
   if (!trimmedQuestion) {
     throw new AppError('Question is required.', 400);
   }
 
+  const selectedDocumentIds = Array.isArray(rawSelectedDocumentIds)
+    ? rawSelectedDocumentIds
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0)
+    : [];
+
+  if (!selectedDocumentIds.length) {
+    throw new AppError('Select at least one document before asking a question.', 400);
+  }
+
   const questionEmbedding = await generateEmbedding(trimmedQuestion);
-  const relevantChunks = await searchSimilarChunks(questionEmbedding);
+  const relevantChunks = await searchSimilarChunks(questionEmbedding, {
+    documentIds: selectedDocumentIds
+  });
   const answer =
     relevantChunks.length > 0
       ? await generateChatCompletion(buildGroundedMessages(trimmedQuestion, relevantChunks))
@@ -133,4 +145,3 @@ module.exports = {
   askQuestion,
   getChatHistory
 };
-

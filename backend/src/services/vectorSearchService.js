@@ -22,7 +22,15 @@ const listDocuments = async () => {
 
 const searchSimilarChunks = async (embedding, options = {}) => {
   const limit = options.limit || env.rag.topK;
+  const documentIds = Array.isArray(options.documentIds)
+    ? options.documentIds.filter((value) => Number.isInteger(value))
+    : [];
   const vector = toVectorLiteral(embedding);
+
+  if (!documentIds.length) {
+    return [];
+  }
+
   const result = await query(
     `SELECT
       dc.id,
@@ -33,9 +41,10 @@ const searchSimilarChunks = async (embedding, options = {}) => {
       1 - (dc.embedding <=> $1::vector) AS similarity
     FROM document_chunks dc
     INNER JOIN documents d ON d.id = dc.document_id
+    WHERE dc.document_id = ANY($3::int[])
     ORDER BY dc.embedding <=> $1::vector
     LIMIT $2`,
-    [vector, limit]
+    [vector, limit, documentIds]
   );
 
   return result.rows.filter((row) => Number(row.similarity) >= env.rag.minSimilarity);
@@ -46,4 +55,3 @@ module.exports = {
   searchSimilarChunks,
   toVectorLiteral
 };
-

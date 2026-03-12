@@ -57,6 +57,12 @@
   margin-bottom: 1rem;
 }
 
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .document-count {
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
@@ -80,5 +86,9 @@
   .section-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .section-actions {
+    flex-wrap: wrap;
   }
 }

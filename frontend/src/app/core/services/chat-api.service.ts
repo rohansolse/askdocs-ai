@@ -21,6 +21,7 @@ export interface ChatHistory {
 export interface AskQuestionRequest {
   question: string;
   chatId?: number;
+  selectedDocumentIds: number[];
 }
 
 export interface AskQuestionResponse {
@@ -52,4 +53,3 @@ export class ChatApiService {
     return this.http.post<AskQuestionResponse>(this.apiBase.getUrl('/chat/ask'), payload);
   }
 }
-
