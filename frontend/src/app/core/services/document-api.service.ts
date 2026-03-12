@@ -18,6 +18,10 @@ export interface UploadDocumentResponse {
   documents: DocumentSummary[];
 }
 
+export interface UploadDocumentsOptions {
+  enableImageOcr?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -31,11 +35,15 @@ export class DocumentApiService {
       .pipe(map((response) => response.documents));
   }
 
-  uploadDocuments(files: File[]): Observable<HttpEvent<UploadDocumentResponse>> {
+  uploadDocuments(
+    files: File[],
+    options: UploadDocumentsOptions = {}
+  ): Observable<HttpEvent<UploadDocumentResponse>> {
     const formData = new FormData();
     for (const file of files) {
       formData.append('files', file);
     }
+    formData.append('enableImageOcr', String(options.enableImageOcr ?? false));
 
     return this.http.post<UploadDocumentResponse>(this.apiBase.getUrl('/documents/upload'), formData, {
       observe: 'events',

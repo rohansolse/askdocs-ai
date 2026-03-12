@@ -11,17 +11,28 @@
 
     <div class="hero-actions">
       <input #fileInput type="file" [accept]="supportedFormats" multiple hidden (change)="onFileSelected($event)">
-      <button mat-flat-button color="primary" type="button" (click)="fileInput.click()">
+      <button mat-flat-button color="primary" type="button" (click)="fileInput.click()" [disabled]="isUploading()">
         Choose documents
       </button>
       <button
         mat-stroked-button
         type="button"
         (click)="uploadDocument()"
-        [disabled]="!selectedFiles().length || isUploading()"
+        [disabled]="!selectedFiles().length || isUploading() || requiresImageOcr()"
       >
-        Upload
+        <span *ngIf="!isUploading()">Upload</span>
+        <span class="button-progress" *ngIf="isUploading()">
+          <mat-spinner diameter="18"></mat-spinner>
+          Processing
+        </span>
       </button>
+      <mat-checkbox
+        [checked]="enableImageOcr()"
+        (change)="toggleImageOcr($event.checked)"
+        [disabled]="isUploading()"
+      >
+        Run OCR for image files
+      </mat-checkbox>
       <div class="file-name" *ngIf="selectedFiles().length">{{ selectedFilesLabel() }}</div>
     </div>
 
@@ -29,11 +40,24 @@
       Supported formats: PDF, DOCX, TXT, PNG, JPG, JPEG
     </p>
 
+    <p class="section-subtitle ocr-hint" *ngIf="hasSelectedImages()">
+      Image OCR is slower on a MacBook Air. Leave it off unless you need text from PNG or JPEG uploads.
+    </p>
+
+    <p class="status-warning" *ngIf="requiresImageOcr()">
+      Image files are selected. Enable OCR to upload them.
+    </p>
+
     <mat-progress-bar
       *ngIf="isUploading() && uploadProgress() !== null"
       mode="determinate"
       [value]="uploadProgress()!"
     ></mat-progress-bar>
+
+    <div class="upload-feedback" *ngIf="isUploading()">
+      <mat-spinner diameter="22"></mat-spinner>
+      <span>{{ uploadStatusMessage() }}</span>
+    </div>
 
     <p class="status-error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   </section>

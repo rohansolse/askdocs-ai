@@ -4,13 +4,44 @@ const AppError = require('../utils/appError');
 const { generateEmbedding } = require('./embeddingService');
 const { searchSimilarChunks } = require('./vectorSearchService');
 const { generateChatCompletion, listInstalledModels } = require('./ollamaService');
+const { measureAsync } = require('../utils/performance');
 
 const FALLBACK_ANSWER = 'This information is not available in the uploaded documents.';
 const normalizeModelName = (value) => (value || '').trim().toLowerCase().replace(/:latest$/, '');
+const DEVELOPMENT_MODEL_CANDIDATES = ['phi3', 'mistral'];
 
 const createTitleFromQuestion = (question) => {
   const trimmed = question.trim().replace(/\s+/g, ' ');
   return trimmed.length > 60 ? `${trimmed.slice(0, 57)}...` : trimmed;
+};
+
+const filterChatModels = (models) =>
+  models.filter(
+    (model) =>
+      normalizeModelName(model.name) !== normalizeModelName(env.ollama.embedModel) &&
+      !normalizeModelName(model.name).includes('embed')
+  );
+
+const findInstalledModel = (models, candidates) =>
+  candidates
+    .map((candidate) =>
+      models.find((model) => normalizeModelName(model.name) === normalizeModelName(candidate))
+    )
+    .find(Boolean);
+
+const resolveDefaultChatModel = async () => {
+  const filteredModels = filterChatModels(await listInstalledModels());
+
+  if (!filteredModels.length) {
+    return env.ollama.chatModel;
+  }
+
+  const preferredCandidates =
+    env.nodeEnv === 'development'
+      ? [env.ollama.chatModel, ...DEVELOPMENT_MODEL_CANDIDATES]
+      : [env.ollama.chatModel];
+
+  return findInstalledModel(filteredModels, preferredCandidates)?.name || filteredModels[0].name;
 };
 
 const ensureChat = async (client, chatId, question) => {
@@ -83,15 +114,29 @@ const askQuestion = async ({
   }
 
   const questionEmbedding = await generateEmbedding(trimmedQuestion);
-  const relevantChunks = await searchSimilarChunks(questionEmbedding, {
-    documentIds: selectedDocumentIds
-  });
-  const selectedModel = typeof model === 'string' && model.trim() ? model.trim() : env.ollama.chatModel;
+  const relevantChunks = await measureAsync(
+    'vector search',
+    () =>
+      searchSimilarChunks(questionEmbedding, {
+        documentIds: selectedDocumentIds
+      }),
+    {
+      documents: selectedDocumentIds.length,
+      topK: env.rag.topK
+    }
+  );
+  const selectedModel =
+    typeof model === 'string' && model.trim() ? model.trim() : await resolveDefaultChatModel();
   const answer =
     relevantChunks.length > 0
-      ? await generateChatCompletion(
-          buildGroundedMessages(trimmedQuestion, relevantChunks),
-          selectedModel
+      ? await measureAsync(
+          'final llm response',
+          () =>
+            generateChatCompletion(buildGroundedMessages(trimmedQuestion, relevantChunks), selectedModel),
+          {
+            model: selectedModel,
+            contextChunks: relevantChunks.length
+          }
         )
       : FALLBACK_ANSWER;
 
@@ -153,15 +198,10 @@ const getChatHistory = async () => {
 };
 
 const getAvailableChatModels = async () => {
-  const models = await listInstalledModels();
-  const filteredModels = models.filter(
-    (model) =>
-      normalizeModelName(model.name) !== normalizeModelName(env.ollama.embedModel) &&
-      !normalizeModelName(model.name).includes('embed')
-  );
+  const filteredModels = filterChatModels(await listInstalledModels());
 
   return {
-    defaultModel: env.ollama.chatModel,
+    defaultModel: await resolveDefaultChatModel(),
     models: filteredModels.map((model) => ({
       name: model.name,
       size: model.size,

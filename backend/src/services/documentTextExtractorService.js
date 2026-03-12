@@ -4,16 +4,16 @@ const { extractTextFromDocx } = require('./docxParserService');
 const { extractTextFromPlainTextFile } = require('./textFileParserService');
 const { extractTextFromImage } = require('./imageOcrService');
 
-const extractTextByDocumentType = async ({ filePath, documentType }) => {
+const extractTextByDocumentType = async ({ filePath, documentType, documentLabel, enableImageOcr }) => {
   switch (documentType) {
     case 'pdf':
-      return extractTextFromPdf(filePath);
+      return extractTextFromPdf(filePath, { documentLabel });
     case 'docx':
-      return extractTextFromDocx(filePath);
+      return extractTextFromDocx(filePath, { documentLabel });
     case 'text':
-      return extractTextFromPlainTextFile(filePath);
+      return extractTextFromPlainTextFile(filePath, { documentLabel });
     case 'image':
-      return extractTextFromImage(filePath);
+      return extractTextFromImage(filePath, { documentLabel, enabled: enableImageOcr });
     default:
       throw new AppError('Unsupported document type.', 400);
   }

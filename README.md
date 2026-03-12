@@ -28,7 +28,7 @@ The assistant is configured to answer only from uploaded documents. If no releva
 
 ### AI
 - Ollama local API
-- `llama3` for chat
+- `phi3` for local development chat with automatic `mistral` fallback if `phi3` is unavailable
 - `nomic-embed-text` for embeddings
 
 ## Folder Structure
@@ -123,13 +123,14 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=docu_chat_ai
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_CHAT_MODEL=llama3
+OLLAMA_CHAT_MODEL=phi3
 OLLAMA_EMBED_MODEL=nomic-embed-text
 OLLAMA_EMBED_DIMENSION=768
-RAG_TOP_K=5
+RAG_TOP_K=3
 RAG_MIN_SIMILARITY=0.35
-CHUNK_SIZE=1200
-CHUNK_OVERLAP=200
+CHUNK_SIZE=800
+CHUNK_OVERLAP=100
+ENABLE_IMAGE_OCR=false
 ```
 
 ## Supported Upload Types
@@ -144,6 +145,7 @@ The ingestion pipeline currently supports:
 - `.jpeg`
 
 Images are processed locally through Tesseract OCR before chunking and embedding.
+OCR can now be left disabled unless you actually need text extraction from direct image uploads.
 
 ## PostgreSQL Setup
 
@@ -184,7 +186,7 @@ The schema creates:
 - `chats`
 - `messages`
 
-The embeddings column is defined as `vector(768)` to match `nomic-embed-text`. If you switch models, update both [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql) and `OLLAMA_EMBED_DIMENSION` in `backend/.env`.
+The embeddings column is defined as `vector(768)` to match `nomic-embed-text`. If you switch embedding models, update both [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql) and `OLLAMA_EMBED_DIMENSION` in `backend/.env`.
 
 ## Ollama Setup
 
@@ -213,7 +215,8 @@ ollama serve
 ### Pull required models
 
 ```bash
-ollama pull llama3
+ollama pull phi3
+ollama pull mistral
 ollama pull nomic-embed-text
 ```
 
@@ -281,15 +284,17 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 ## API Overview
 
 ### `POST /api/documents/upload`
-- Accepts a supported document file using the `file` field.
+- Accepts supported documents using the `files` multipart field.
+- Optional multipart field: `enableImageOcr=true` to run OCR for PNG or JPEG uploads.
 - Extracts text depending on file type:
   - PDF via `pdf-parse`
   - DOCX via `mammoth`
   - TXT via direct file read
-  - image files via local Tesseract OCR
-- Splits text into chunks.
+  - image files via local Tesseract OCR when enabled
+- Splits text into smaller chunks.
 - Generates embeddings with Ollama.
 - Stores metadata and vectors in PostgreSQL.
+- Logs timing for file parsing, OCR, chunking, embedding generation, and DB insert.
 
 ### `GET /api/documents`
 - Returns the uploaded documents list.
@@ -302,7 +307,7 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
   "question": "What does the uploaded document say about the setup?",
   "chatId": 1,
   "selectedDocumentIds": [1, 2],
-  "model": "llama3:latest"
+  "model": "phi3:latest"
 }
 ```
 
@@ -311,6 +316,7 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 - Builds a grounded prompt from retrieved chunks only.
 - Calls the Ollama chat model.
 - Saves user and assistant messages to chat history.
+- Logs timing for vector search and the final LLM response.
 
 ### `GET /api/chat/models`
 - Returns the installed Ollama chat models for the frontend dropdown.
@@ -324,7 +330,7 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 1. Start PostgreSQL.
 2. Start Ollama.
 3. Verify the database `docu_chat_ai` exists.
-4. Verify both Ollama models are installed.
+4. Verify the lightweight chat model and embedding model are installed.
 5. Run:
 
 ```bash
@@ -343,7 +349,7 @@ You can also test the upload endpoint directly:
 
 ```bash
 curl -X POST http://localhost:3000/api/documents/upload \
-  -F "file=@/absolute/path/to/your-document.pdf"
+  -F "files=@/absolute/path/to/your-document.pdf"
 ```
 
 ## How To Test Chat Flow
@@ -364,7 +370,7 @@ You can also test the chat endpoint directly:
 ```bash
 curl -X POST http://localhost:3000/api/chat/ask \
   -H "Content-Type: application/json" \
-  -d '{"question":"Summarize the uploaded setup steps."}'
+  -d '{"question":"Summarize the uploaded setup steps.","selectedDocumentIds":[1]}'
 ```
 
 ## Troubleshooting
@@ -421,10 +427,11 @@ Pull the embedding model:
 ollama pull nomic-embed-text
 ```
 
-Also install the chat model:
+Also install a lightweight chat model:
 
 ```bash
-ollama pull llama3
+ollama pull phi3
+ollama pull mistral
 ```
 
 ### `Tesseract OCR is not installed`
@@ -453,7 +460,7 @@ This means the local PostgreSQL server on your machine does not have the `pgvect
 - Install the `pgvector` extension for your PostgreSQL instance.
 - Install Ollama locally.
 - Install Tesseract locally if you want image uploads.
-- Pull `llama3` and `nomic-embed-text`.
+- Pull `phi3` or `mistral`, plus `nomic-embed-text`.
 - Copy `backend/.env.example` to `backend/.env`.
 - Run `npm install`.
 - Run `npm run install:all`.

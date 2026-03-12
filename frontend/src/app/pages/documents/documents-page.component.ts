@@ -39,11 +39,35 @@ export class DocumentsPageComponent {
   readonly isLoading = signal(false);
   readonly isUploading = signal(false);
   readonly uploadProgress = signal<number | null>(null);
+  readonly uploadPhase = signal<'idle' | 'sending' | 'processing'>('idle');
+  readonly enableImageOcr = signal(false);
   readonly selectedFiles = signal<File[]>([]);
   readonly errorMessage = signal('');
   readonly documents = this.documentSelection.documents;
   readonly selectedDocumentIds = this.documentSelection.selectedDocumentIds;
   readonly allSelected = this.documentSelection.allSelected;
+  readonly hasSelectedImages = computed(() =>
+    this.selectedFiles().some(
+      (file) => file.type.startsWith('image/') || /\.(png|jpe?g)$/i.test(file.name)
+    )
+  );
+  readonly requiresImageOcr = computed(() => this.hasSelectedImages() && !this.enableImageOcr());
+  readonly uploadStatusMessage = computed(() => {
+    if (!this.isUploading()) {
+      return '';
+    }
+
+    if (this.uploadPhase() === 'processing') {
+      return 'Processing locally: parsing, chunking, embedding generation, and vector indexing.';
+    }
+
+    const progress = this.uploadProgress();
+    if (typeof progress === 'number' && progress > 0) {
+      return `Uploading files to the local backend... ${progress}%`;
+    }
+
+    return 'Preparing upload...';
+  });
   readonly selectionSummary = computed(() => {
     const total = this.documents().length;
     const selected = this.selectedDocumentIds().length;
@@ -74,6 +98,7 @@ export class DocumentsPageComponent {
 
     this.selectedFiles.set(files);
     this.uploadProgress.set(null);
+    this.uploadPhase.set('idle');
     this.errorMessage.set('');
   }
 
@@ -83,21 +108,40 @@ export class DocumentsPageComponent {
       return;
     }
 
+    if (this.requiresImageOcr()) {
+      this.errorMessage.set('Enable OCR to process PNG or JPEG uploads.');
+      return;
+    }
+
     this.isUploading.set(true);
     this.uploadProgress.set(0);
+    this.uploadPhase.set('sending');
     this.errorMessage.set('');
 
     this.documentApi
-      .uploadDocuments(files)
+      .uploadDocuments(files, {
+        enableImageOcr: this.enableImageOcr()
+      })
       .pipe(
-        finalize(() => this.isUploading.set(false)),
+        finalize(() => {
+          this.isUploading.set(false);
+          this.uploadPhase.set('idle');
+        }),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (event) => {
+          if (event.type === HttpEventType.Sent) {
+            this.uploadPhase.set('sending');
+          }
+
           if (event.type === HttpEventType.UploadProgress) {
             const total = event.total || files.reduce((sum, file) => sum + file.size, 0);
-            this.uploadProgress.set(Math.round((event.loaded / total) * 100));
+            const progress = total > 0 ? Math.round((event.loaded / total) * 100) : 100;
+            this.uploadProgress.set(progress);
+            if (progress >= 100) {
+              this.uploadPhase.set('processing');
+            }
           }
 
           if (event.type === HttpEventType.Response) {
@@ -168,6 +212,13 @@ export class DocumentsPageComponent {
 
   toggleDocumentSelection(documentId: number, checked: boolean): void {
     this.documentSelection.toggleDocument(documentId, checked);
+  }
+
+  toggleImageOcr(checked: boolean): void {
+    this.enableImageOcr.set(checked);
+    if (checked && this.errorMessage() === 'Enable OCR to process PNG or JPEG uploads.') {
+      this.errorMessage.set('');
+    }
   }
 
   private loadDocuments(): void {

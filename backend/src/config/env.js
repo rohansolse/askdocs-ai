@@ -10,6 +10,23 @@ const toNumber = (value, fallback) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toBoolean = (value, fallback) => {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+
+  if (['false', '0', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+
+  return fallback;
+};
+
 const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: toNumber(process.env.PORT, 3000),
@@ -22,17 +39,21 @@ const env = {
   },
   ollama: {
     baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-    chatModel: process.env.OLLAMA_CHAT_MODEL || 'llama3',
+    chatModel:
+      process.env.OLLAMA_CHAT_MODEL || (process.env.NODE_ENV === 'development' ? 'phi3' : 'llama3'),
     embedModel: process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text',
     embeddingDimension: toNumber(process.env.OLLAMA_EMBED_DIMENSION, 768)
   },
   rag: {
-    topK: toNumber(process.env.RAG_TOP_K, 5),
+    topK: toNumber(process.env.RAG_TOP_K, 3),
     minSimilarity: toNumber(process.env.RAG_MIN_SIMILARITY, 0.35)
   },
   chunking: {
-    size: toNumber(process.env.CHUNK_SIZE, 1200),
-    overlap: toNumber(process.env.CHUNK_OVERLAP, 200)
+    size: toNumber(process.env.CHUNK_SIZE, 800),
+    overlap: toNumber(process.env.CHUNK_OVERLAP, 100)
+  },
+  imageOcr: {
+    enabled: toBoolean(process.env.ENABLE_IMAGE_OCR, process.env.NODE_ENV !== 'development')
   }
 };
 

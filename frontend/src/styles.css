@@ -24,6 +24,7 @@ body {
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   background: var(--app-bg);
   color: var(--text-main);
+  overflow: hidden;
 }
 
 * {
@@ -34,6 +35,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 0;
 }
 
 .panel-card {
@@ -158,6 +160,10 @@ body {
 }
 
 @media (max-width: 768px) {
+  body {
+    overflow: auto;
+  }
+
   .panel-card {
     border-radius: 18px;
   }

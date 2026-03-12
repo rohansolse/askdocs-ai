@@ -81,20 +81,18 @@
   </aside>
 
   <section class="panel-card conversation-panel">
-    <header class="conversation-header">
-      <div>
-        <p class="eyebrow">Grounded answers only</p>
-        <h1 class="section-title">{{ conversationTitle() }}</h1>
-        <p class="section-subtitle">
-          The assistant should respond only from retrieved document chunks.
-        </p>
-      </div>
+    <header class="conversation-topbar">
+      <p class="eyebrow">Grounded answers only</p>
+      <section class="active-context">
+        <div class="active-context-label">Context</div>
+        <div class="active-context-value">{{ selectedDocumentsLabel() }}</div>
+      </section>
     </header>
 
-    <section class="active-context">
-      <div class="active-context-label">Current context</div>
-      <div class="active-context-value">{{ selectedDocumentsLabel() }}</div>
-    </section>
+    <div class="chat-status" *ngIf="isAsking()">
+      <mat-spinner diameter="20"></mat-spinner>
+      <span>{{ chatStatusMessage() }}</span>
+    </div>
 
     <div class="messages">
       <div class="empty-state" *ngIf="!renderedMessages().length && !isAsking()">
@@ -133,13 +131,19 @@
 
       <div class="assistant-loading" *ngIf="isAsking()">
         <mat-spinner diameter="22"></mat-spinner>
-        Please wait for a reply...
+        Working locally. This can take a few seconds on smaller Ollama models.
       </div>
     </div>
 
     <section class="context-panel" *ngIf="latestContext().length">
-      <h3>Retrieved context</h3>
-      <div class="context-chip" *ngFor="let item of latestContext()">
+      <button type="button" class="context-toggle" (click)="toggleContextExpanded()">
+        <span>Retrieved context</span>
+        <span class="context-toggle-meta">
+          {{ latestContext().length }} {{ latestContext().length === 1 ? 'chunk' : 'chunks' }}
+          {{ contextExpanded() ? 'Hide' : 'Show' }}
+        </span>
+      </button>
+      <div class="context-chip" *ngFor="let item of visibleContext()">
         {{ item.documentName }} • chunk {{ item.chunkIndex }} • {{ item.similarity | number: '1.2-2' }}
       </div>
     </section>
@@ -150,6 +154,7 @@
           matInput
           rows="3"
           [formControl]="questionControl"
+          [disabled]="isAsking()"
           (keydown)="handleComposerKeydown($event)"
           placeholder="What does the documentation say about...?"
         ></textarea>
@@ -163,7 +168,11 @@
         (click)="submitQuestion()"
         [disabled]="isAsking()"
       >
-        Send
+        <span *ngIf="!isAsking()">Send</span>
+        <span class="button-progress" *ngIf="isAsking()">
+          <mat-spinner diameter="18"></mat-spinner>
+          Thinking
+        </span>
       </button>
     </form>
 

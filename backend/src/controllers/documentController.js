@@ -3,7 +3,9 @@ const { processMultipleDocumentUploads } = require('../services/documentService'
 const { listDocuments } = require('../services/vectorSearchService');
 
 const uploadDocument = asyncHandler(async (req, res) => {
-  const documents = await processMultipleDocumentUploads(req.files);
+  const documents = await processMultipleDocumentUploads(req.files, {
+    enableImageOcr: req.body?.enableImageOcr
+  });
 
   res.status(201).json({
     message:

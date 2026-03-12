@@ -7,6 +7,12 @@ const ollamaClient = axios.create({
   timeout: 120000
 });
 
+const MODEL_CACHE_TTL_MS = 30 * 1000;
+let modelCache = {
+  expiresAt: 0,
+  models: null
+};
+
 const getEmbedding = async (input) => {
   try {
     const embedResponse = await ollamaClient.post('/api/embed', {
@@ -81,16 +87,27 @@ const generateChatCompletion = async (messages, model = env.ollama.chatModel) =>
   }
 };
 
-const listInstalledModels = async () => {
+const listInstalledModels = async (options = {}) => {
+  if (!options.forceRefresh && modelCache.models && modelCache.expiresAt > Date.now()) {
+    return modelCache.models;
+  }
+
   try {
     const response = await ollamaClient.get('/api/tags');
     const models = Array.isArray(response.data?.models) ? response.data.models : [];
 
-    return models.map((model) => ({
+    const normalizedModels = models.map((model) => ({
       name: model.name,
       size: model.size,
       modifiedAt: model.modified_at
     }));
+
+    modelCache = {
+      expiresAt: Date.now() + MODEL_CACHE_TTL_MS,
+      models: normalizedModels
+    };
+
+    return normalizedModels;
   } catch (error) {
     throw new AppError(
       error.response?.data?.error ||

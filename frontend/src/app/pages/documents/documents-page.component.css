@@ -1,4 +1,6 @@
 .documents-page {
+  height: 100%;
+  min-height: 0;
   gap: 1.25rem;
 }
 
@@ -10,6 +12,13 @@
 .hero {
   display: grid;
   gap: 1.15rem;
+}
+
+.documents-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .eyebrow {
@@ -39,6 +48,12 @@
   min-width: 148px;
 }
 
+.button-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
 .file-name {
   min-width: 0;
   max-width: min(100%, 520px);
@@ -52,6 +67,24 @@
 .supported-formats {
   margin-top: -0.35rem;
   font-size: 0.94rem;
+}
+
+.ocr-hint {
+  margin-top: -0.65rem;
+}
+
+.upload-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.status-warning {
+  margin: -0.2rem 0 0;
+  color: #8a5b00;
+  font-weight: 700;
 }
 
 .section-head {
@@ -82,7 +115,23 @@
   min-height: 180px;
 }
 
+.documents-panel mat-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (min-width: 769px) {
+  .documents-page {
+    overflow: hidden;
+  }
+}
+
 @media (max-width: 768px) {
+  .documents-page {
+    height: auto;
+  }
+
   .hero,
   .documents-panel {
     padding: 1.2rem;

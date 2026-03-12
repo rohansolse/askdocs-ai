@@ -3,7 +3,8 @@
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   gap: 1.25rem;
   align-items: stretch;
-  min-height: calc(100dvh - 8.5rem);
+  height: 100%;
+  min-height: 0;
 }
 
 .sidebar-stack {
@@ -77,16 +78,16 @@
 .scope-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .scope-item {
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
-  padding: 0.8rem 0.9rem;
+  padding: 0.65rem 0.8rem;
   border: 1px solid rgba(15, 92, 90, 0.12);
-  border-radius: 16px;
+  border-radius: 14px;
   background: rgba(248, 251, 255, 0.8);
 }
 
@@ -96,27 +97,43 @@
 
 .scope-name {
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.3;
+  font-size: 0.92rem;
   word-break: break-word;
 }
 
 .scope-meta {
-  margin-top: 0.2rem;
+  margin-top: 0.12rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .active-chat {
-  border-radius: 18px;
+  border-radius: 14px;
   background: rgba(15, 92, 90, 0.1);
 }
 
+:host ::ng-deep .history-panel .mat-mdc-list-item {
+  min-height: 56px;
+}
+
+:host ::ng-deep .history-panel .mat-mdc-list-item-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+:host ::ng-deep .history-panel .mat-mdc-list-item-line {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
 .eyebrow {
-  margin: 0 0 0.45rem;
+  margin: 0;
   color: var(--accent);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -126,29 +143,52 @@
   min-height: 0;
 }
 
+.conversation-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.65rem;
+}
+
 .active-context {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin-bottom: 1rem;
-  padding: 0.95rem 1rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0;
+  padding: 0.65rem 0.85rem;
   border: 1px solid rgba(15, 92, 90, 0.14);
-  border-radius: 18px;
+  border-radius: 14px;
   background: rgba(15, 92, 90, 0.06);
+  flex: 1;
+  min-width: 0;
 }
 
 .active-context-label {
   color: var(--accent);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .active-context-value {
-  line-height: 1.5;
+  line-height: 1.35;
   font-weight: 600;
   word-break: break-word;
+}
+
+.chat-status,
+.button-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.chat-status {
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .messages {
@@ -321,25 +361,47 @@
 .context-panel {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-top: 1.1rem;
-  margin-bottom: 0.4rem;
-  padding: 0.9rem 0;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+  margin-bottom: 0.2rem;
+  padding: 0.45rem 0 0;
 }
 
-.context-panel h3 {
+.context-toggle {
   width: 100%;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.context-toggle span:first-child {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.context-toggle-meta {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .context-chip {
-  padding: 0.5rem 0.8rem;
+  padding: 0.36rem 0.65rem;
   border: 1px solid rgba(15, 92, 90, 0.18);
   border-radius: 999px;
   background: rgba(15, 92, 90, 0.08);
   color: var(--accent);
-  font-size: 0.88rem;
+  font-size: 0.76rem;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .loading-state {
@@ -355,7 +417,7 @@
 @media (max-width: 980px) {
   .chat-shell {
     grid-template-columns: 1fr;
-    min-height: auto;
+    height: auto;
   }
 
   .messages {
@@ -371,6 +433,23 @@
   .history-panel {
     max-height: none;
     overflow: visible;
+  }
+
+  .conversation-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .active-context {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .context-toggle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
   }
 
   .composer {

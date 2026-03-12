@@ -58,10 +58,9 @@ export class ChatPageComponent {
   readonly pendingMessages = signal<ChatMessage[]>([]);
   readonly pendingChatTitle = signal<string | null>(null);
   readonly latestContext = signal<AskQuestionResponse['context']>([]);
+  readonly contextExpanded = signal(false);
   readonly errorMessage = signal('');
   readonly selectionErrorMessage = signal('');
-  readonly modelsLoading = this.chatModelService.loading;
-  readonly availableModels = this.chatModelService.availableModels;
   readonly selectedModel = this.chatModelService.selectedModel;
   readonly questionControl = new FormControl('', {
     nonNullable: true
@@ -128,12 +127,26 @@ export class ChatPageComponent {
 
     return `${selected} of ${total} selected`;
   });
+  readonly chatStatusMessage = computed(() => {
+    if (!this.isAsking()) {
+      return '';
+    }
+
+    const model = this.selectedModel();
+    const modelLabel = model ? this.chatModelService.getDisplayName(model) : 'the selected Ollama model';
+    return `Searching relevant chunks and generating a local reply with ${modelLabel}...`;
+  });
+  readonly visibleContext = computed(() => {
+    const context = this.latestContext();
+    return this.contextExpanded() ? context : context.slice(0, 2);
+  });
 
   selectChat(chatId: number): void {
     this.selectedChatId.set(chatId);
     this.pendingMessages.set([]);
     this.pendingChatTitle.set(null);
     this.latestContext.set([]);
+    this.contextExpanded.set(false);
   }
 
   startNewChat(): void {
@@ -141,6 +154,7 @@ export class ChatPageComponent {
     this.pendingMessages.set([]);
     this.pendingChatTitle.set(null);
     this.latestContext.set([]);
+    this.contextExpanded.set(false);
     this.questionControl.setValue('');
   }
 
@@ -204,6 +218,7 @@ export class ChatPageComponent {
             }
           ]);
           this.latestContext.set(response.context);
+          this.contextExpanded.set(false);
           this.loadHistory(response.chatId, true);
         },
         error: (error) => {
@@ -250,10 +265,6 @@ export class ChatPageComponent {
     }
   }
 
-  updateSelectedModel(modelName: string): void {
-    this.chatModelService.updateSelectedModel(modelName);
-  }
-
   trackByChat(index: number, chat: ChatHistory): number {
     return chat.id;
   }
@@ -264,6 +275,10 @@ export class ChatPageComponent {
 
   trackByDocument(index: number, document: DocumentSummary): number {
     return document.id;
+  }
+
+  toggleContextExpanded(): void {
+    this.contextExpanded.update((value) => !value);
   }
 
   isDocumentSelected(documentId: number): boolean {
