@@ -12,7 +12,6 @@
     <div class="hero-actions">
       <input #fileInput type="file" accept="application/pdf" hidden (change)="onFileSelected($event)">
       <button mat-flat-button color="primary" type="button" (click)="fileInput.click()">
-        <mat-icon>attach_file</mat-icon>
         Choose PDF
       </button>
       <button
@@ -21,7 +20,6 @@
         (click)="uploadDocument()"
         [disabled]="!selectedFile() || isUploading()"
       >
-        <mat-icon>cloud_upload</mat-icon>
         Upload
       </button>
       <div class="file-name" *ngIf="selectedFile() as file">{{ file.name }}</div>
@@ -63,4 +61,3 @@
     </mat-list>
   </section>
 </div>
-

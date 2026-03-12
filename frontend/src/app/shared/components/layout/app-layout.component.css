@@ -1,11 +1,11 @@
 .layout {
-  min-height: 100vh;
-  padding: 1.25rem;
+  min-height: 100dvh;
+  padding: 1rem;
 }
 
 .toolbar {
   position: sticky;
-  top: 1.25rem;
+  top: 1rem;
   z-index: 20;
   display: flex;
   justify-content: space-between;
@@ -54,7 +54,13 @@
 }
 
 .nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 120px;
+  justify-content: center;
+  padding: 0.35rem 1rem;
   border-radius: 999px;
+  font-weight: 600;
 }
 
 .active-link {
@@ -64,6 +70,7 @@
 .content {
   max-width: 1320px;
   margin: 1.5rem auto 0;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -81,5 +88,9 @@
   .nav-links {
     justify-content: space-between;
   }
-}
 
+  .nav-links a {
+    min-width: 0;
+    flex: 1;
+  }
+}

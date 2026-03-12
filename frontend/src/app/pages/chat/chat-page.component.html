@@ -6,7 +6,6 @@
         <p class="section-subtitle">Reloadable local history stored in PostgreSQL.</p>
       </div>
       <button mat-stroked-button type="button" (click)="startNewChat()">
-        <mat-icon>add_comment</mat-icon>
         New chat
       </button>
     </div>
@@ -88,7 +87,6 @@
       </mat-form-field>
 
       <button mat-flat-button color="primary" type="submit" [disabled]="questionControl.invalid || isAsking()">
-        <mat-icon>send</mat-icon>
         Send
       </button>
     </form>
@@ -96,4 +94,3 @@
     <p class="status-error" *ngIf="errorMessage()">{{ errorMessage() }}</p>
   </section>
 </div>
-

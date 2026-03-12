@@ -33,6 +33,7 @@ The assistant is configured to answer only from uploaded documents. If no releva
 
 ```text
 .
+├── package.json
 ├── backend
 │   ├── package.json
 │   └── src
@@ -41,6 +42,8 @@ The assistant is configured to answer only from uploaded documents. If no releva
 │       ├── config
 │       ├── controllers
 │       ├── database
+│       │   ├── bootstrap.sql
+│       │   ├── pgadmin-create-database.sql
 │       │   └── schema.sql
 │       ├── middlewares
 │       ├── routes
@@ -64,23 +67,50 @@ The assistant is configured to answer only from uploaded documents. If no releva
 └── README.md
 ```
 
-## Backend Setup
+## Local Prerequisites
 
-1. Install backend dependencies:
+Install these once on your machine:
+
+- Node.js 20+ and npm
+- PostgreSQL
+- `pgvector` extension for PostgreSQL
+- Ollama
+
+Optional but useful:
+
+- pgAdmin for manual database setup
+
+## First-Time Setup
+
+### 1. Install root tooling
+
+Install the root package first so `concurrently` is available:
 
 ```bash
-npm install --prefix backend
+npm install
 ```
 
-2. Create the backend environment file:
+### 2. Install frontend and backend dependencies
+
+From the repo root:
+
+```bash
+npm run install:all
+```
+
+This installs:
+
+- root dev dependency: `concurrently`
+- backend dependencies from [backend/package.json](/Users/rohansolse/Documents/askdocs-ai/backend/package.json)
+- frontend dependencies from [frontend/package.json](/Users/rohansolse/Documents/askdocs-ai/frontend/package.json)
+
+### 3. Create backend environment file
 
 ```bash
 cp backend/.env.example backend/.env
 ```
 
-3. Update `backend/.env` if your PostgreSQL or Ollama setup differs.
-
-Environment variables:
+Default values:
 
 ```env
 PORT=3000
@@ -99,53 +129,37 @@ CHUNK_SIZE=1200
 CHUNK_OVERLAP=200
 ```
 
-4. Start the backend:
-
-```bash
-cd backend
-npm run dev
-```
-
-The API will run at `http://localhost:3000`.
-
-## Frontend Setup
-
-1. Install frontend dependencies:
-
-```bash
-npm install --prefix frontend
-```
-
-2. Start the Angular app:
-
-```bash
-cd frontend
-npm start
-```
-
-The UI will run at `http://localhost:4200`.
-
-By default, the frontend calls the backend at `http://localhost:3000/api`. If needed, update [environment.ts](/Users/rohansolse/Documents/askdocs-ai/frontend/src/environments/environment.ts).
-
 ## PostgreSQL Setup
 
-1. Create the database:
+### Option A: `psql` CLI
 
 ```bash
-createdb -U postgres docu_chat_ai
+psql -U postgres -d postgres -f backend/src/database/bootstrap.sql
 ```
 
-2. Connect to PostgreSQL and enable `pgvector`:
+This creates the database if needed and applies the schema.
+
+### Option B: pgAdmin
+
+Run this first against your default database, usually `postgres`:
+
+```bash
+backend/src/database/pgadmin-create-database.sql
+```
+
+That file contains:
 
 ```sql
-CREATE EXTENSION IF NOT EXISTS vector;
+CREATE DATABASE docu_chat_ai;
 ```
 
-3. Run the schema script:
+Then connect to `docu_chat_ai` in pgAdmin and run [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql).
 
-```bash
-psql -U postgres -d docu_chat_ai -f backend/src/database/schema.sql
-```
+Important:
+
+- `bootstrap.sql` is for `psql`, not pgAdmin
+- pgAdmin does not support `\connect` or `\gexec`
+- the backend also auto-runs [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql) on startup after it connects, but the database itself must already exist
 
 The schema creates:
 
@@ -154,31 +168,83 @@ The schema creates:
 - `chats`
 - `messages`
 
-The embeddings column is defined as `vector(768)` to match `nomic-embed-text`. If you switch to a model with a different embedding size, update both [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql) and `OLLAMA_EMBED_DIMENSION` in `backend/.env`.
-
-## pgvector Enable Command
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-```
+The embeddings column is defined as `vector(768)` to match `nomic-embed-text`. If you switch models, update both [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql) and `OLLAMA_EMBED_DIMENSION` in `backend/.env`.
 
 ## Ollama Setup
 
-1. Install Ollama locally.
-2. Start the Ollama service:
+### Install Ollama
+
+On macOS:
+
+```bash
+brew install --cask ollama
+```
+
+Or download it from:
+
+- https://ollama.com/download/mac
+
+### Start Ollama
+
+If you are using the app on macOS, open `Ollama.app` and keep it running.
+
+Or start it from the terminal:
 
 ```bash
 ollama serve
 ```
 
-3. Pull the required models:
+### Pull required models
 
 ```bash
 ollama pull llama3
 ollama pull nomic-embed-text
 ```
 
-4. Confirm Ollama is reachable at `http://localhost:11434`.
+### Verify Ollama is reachable
+
+```bash
+curl http://localhost:11434/api/tags
+```
+
+### Verify embeddings manually
+
+```bash
+curl http://localhost:11434/api/embed \
+  -H "Content-Type: application/json" \
+  -d '{"model":"nomic-embed-text","input":"hello world"}'
+```
+
+If this fails, uploads will also fail.
+
+## Running The Project
+
+From the repo root:
+
+```bash
+npm run dev
+```
+
+This starts:
+
+- backend on `http://localhost:3000`
+- frontend on `http://localhost:4200`
+
+Other useful root scripts:
+
+```bash
+npm run backend
+npm run frontend
+```
+
+If you prefer separate terminals:
+
+```bash
+npm run backend
+npm run frontend
+```
+
+By default, the frontend calls the backend at `http://localhost:3000/api`. If needed, update [environment.ts](/Users/rohansolse/Documents/askdocs-ai/frontend/src/environments/environment.ts).
 
 ## API Overview
 
@@ -213,28 +279,14 @@ ollama pull nomic-embed-text
 
 ## How To Run Everything
 
-Open three terminals.
-
-### Terminal 1: Ollama
-
-```bash
-ollama serve
-```
-
-### Terminal 2: Backend
+1. Start PostgreSQL.
+2. Start Ollama.
+3. Verify the database `docu_chat_ai` exists.
+4. Verify both Ollama models are installed.
+5. Run:
 
 ```bash
-cd backend
-npm install
 npm run dev
-```
-
-### Terminal 3: Frontend
-
-```bash
-cd frontend
-npm install
-npm start
 ```
 
 ## How To Test PDF Upload
@@ -273,6 +325,70 @@ curl -X POST http://localhost:3000/api/chat/ask \
   -d '{"question":"Summarize the uploaded setup steps."}'
 ```
 
+## Troubleshooting
+
+### `sh: concurrently: command not found`
+
+You did not install the root package yet.
+
+Run:
+
+```bash
+npm install
+```
+
+### `database "docu_chat_ai" does not exist`
+
+Create the database first:
+
+```bash
+psql -U postgres -d postgres -f backend/src/database/bootstrap.sql
+```
+
+Or use pgAdmin with [pgadmin-create-database.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/pgadmin-create-database.sql).
+
+### `relation "documents" does not exist`
+
+The database exists but the schema is missing.
+
+Run:
+
+```bash
+psql -U postgres -d docu_chat_ai -f backend/src/database/schema.sql
+```
+
+The backend also auto-initializes the schema on startup after a successful DB connection.
+
+### `Failed to connect to localhost port 11434`
+
+Ollama is not running.
+
+Start it:
+
+```bash
+ollama serve
+```
+
+Or open `Ollama.app` on macOS.
+
+### `model "nomic-embed-text" not found, try pulling it first`
+
+Pull the embedding model:
+
+```bash
+ollama pull nomic-embed-text
+```
+
+Also install the chat model:
+
+```bash
+ollama pull llama3
+```
+
+### `CREATE EXTENSION vector` fails
+
+`pgvector` is not installed in your PostgreSQL server. Install `pgvector` for your PostgreSQL version first, then rerun the schema.
+
 ## Notes For Future Improvements
 
 - Add document citations in responses.
@@ -285,9 +401,8 @@ curl -X POST http://localhost:3000/api/chat/ask \
 
 - Install PostgreSQL locally.
 - Install the `pgvector` extension for your PostgreSQL instance.
-- Create the `docu_chat_ai` database.
-- Run [schema.sql](/Users/rohansolse/Documents/askdocs-ai/backend/src/database/schema.sql).
-- Install Ollama locally and pull the required models.
+- Install Ollama locally.
+- Pull `llama3` and `nomic-embed-text`.
 - Copy `backend/.env.example` to `backend/.env`.
-- Install dependencies in both `backend` and `frontend`.
-
+- Run `npm install`.
+- Run `npm run install:all`.

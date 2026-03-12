@@ -9,16 +9,41 @@ const ollamaClient = axios.create({
 
 const getEmbedding = async (input) => {
   try {
-    const response = await ollamaClient.post('/api/embeddings', {
+    const embedResponse = await ollamaClient.post('/api/embed', {
+      model: env.ollama.embedModel,
+      input
+    });
+
+    const embedding = embedResponse.data?.embeddings?.[0];
+    if (Array.isArray(embedding)) {
+      return embedding;
+    }
+  } catch (error) {
+    const endpointNotFound =
+      error.response?.status === 404 ||
+      error.response?.data?.error?.includes('/api/embed');
+
+    if (!endpointNotFound) {
+      throw new AppError(
+        error.response?.data?.error ||
+          error.message ||
+          'Failed to generate embeddings from Ollama.',
+        502
+      );
+    }
+  }
+
+  try {
+    const legacyResponse = await ollamaClient.post('/api/embeddings', {
       model: env.ollama.embedModel,
       prompt: input
     });
 
-    if (!Array.isArray(response.data.embedding)) {
+    if (!Array.isArray(legacyResponse.data.embedding)) {
       throw new AppError('Invalid embedding response from Ollama.', 502);
     }
 
-    return response.data.embedding;
+    return legacyResponse.data.embedding;
   } catch (error) {
     throw new AppError(
       error.response?.data?.error ||
