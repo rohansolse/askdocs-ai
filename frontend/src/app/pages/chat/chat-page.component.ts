@@ -9,17 +9,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { finalize } from 'rxjs';
 import {
   AskQuestionResponse,
   ChatApiService,
   ChatHistory,
-  ChatModelSummary,
   ChatMessage
 } from '../../core/services/chat-api.service';
 import { DocumentApiService, DocumentSummary } from '../../core/services/document-api.service';
+import { ChatModelService } from '../../core/services/chat-model.service';
 import { DocumentSelectionService } from '../../core/services/document-selection.service';
 import { ChatRichTextPipe } from '../../shared/pipes/chat-rich-text.pipe';
 
@@ -36,7 +35,6 @@ import { ChatRichTextPipe } from '../../shared/pipes/chat-rich-text.pipe';
     MatInputModule,
     MatListModule,
     MatProgressSpinnerModule,
-    MatSelectModule,
     MatSnackBarModule,
     ChatRichTextPipe
   ],
@@ -48,6 +46,7 @@ export class ChatPageComponent {
   private readonly chatApi = inject(ChatApiService);
   private readonly documentApi = inject(DocumentApiService);
   private readonly documentSelection = inject(DocumentSelectionService);
+  private readonly chatModelService = inject(ChatModelService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -55,15 +54,15 @@ export class ChatPageComponent {
   readonly selectedChatId = signal<number | null>(null);
   readonly historyLoading = signal(false);
   readonly documentsLoading = signal(false);
-  readonly modelsLoading = signal(false);
   readonly isAsking = signal(false);
   readonly pendingMessages = signal<ChatMessage[]>([]);
   readonly pendingChatTitle = signal<string | null>(null);
   readonly latestContext = signal<AskQuestionResponse['context']>([]);
   readonly errorMessage = signal('');
   readonly selectionErrorMessage = signal('');
-  readonly availableModels = signal<ChatModelSummary[]>([]);
-  readonly selectedModel = signal('');
+  readonly modelsLoading = this.chatModelService.loading;
+  readonly availableModels = this.chatModelService.availableModels;
+  readonly selectedModel = this.chatModelService.selectedModel;
   readonly questionControl = new FormControl('', {
     nonNullable: true
   });
@@ -71,13 +70,10 @@ export class ChatPageComponent {
   readonly selectedDocumentIds = this.documentSelection.selectedDocumentIds;
   readonly selectedDocuments = this.documentSelection.selectedDocuments;
   readonly allDocumentsSelected = this.documentSelection.allSelected;
-  private normalizeModelName(value: string | null | undefined): string {
-    return (value || '').trim().toLowerCase().replace(/:latest$/, '');
-  }
 
   ngOnInit(): void {
     this.loadDocuments();
-    this.loadModels();
+    this.chatModelService.ensureLoaded();
     this.loadHistory();
   }
 
@@ -255,7 +251,7 @@ export class ChatPageComponent {
   }
 
   updateSelectedModel(modelName: string): void {
-    this.selectedModel.set(modelName);
+    this.chatModelService.updateSelectedModel(modelName);
   }
 
   trackByChat(index: number, chat: ChatHistory): number {
@@ -299,32 +295,6 @@ export class ChatPageComponent {
         },
         error: (error) => {
           this.errorMessage.set(error?.error?.message || 'Failed to load documents.');
-        }
-      });
-  }
-
-  private loadModels(): void {
-    this.modelsLoading.set(true);
-
-    this.chatApi
-      .getModels()
-      .pipe(
-        finalize(() => this.modelsLoading.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe({
-        next: (result) => {
-          this.availableModels.set(result.models);
-
-          const matchedModel = result.models.find(
-            (model) => this.normalizeModelName(model.name) === this.normalizeModelName(result.defaultModel)
-          );
-          const nextModel = matchedModel?.name || result.models[0]?.name || result.defaultModel;
-
-          this.selectedModel.set(nextModel);
-        },
-        error: (error) => {
-          this.errorMessage.set(error?.error?.message || 'Failed to load available models.');
         }
       });
   }

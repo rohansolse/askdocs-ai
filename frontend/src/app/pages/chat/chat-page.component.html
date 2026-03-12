@@ -96,22 +96,6 @@
       <div class="active-context-value">{{ selectedDocumentsLabel() }}</div>
     </section>
 
-    <section class="model-bar">
-      <mat-form-field appearance="outline" class="model-field">
-        <mat-label>Chat model</mat-label>
-        <mat-select
-          [value]="selectedModel()"
-          (valueChange)="updateSelectedModel($event)"
-          [disabled]="modelsLoading() || isAsking() || !availableModels().length"
-        >
-          <mat-option *ngFor="let model of availableModels()" [value]="model.name">
-            {{ model.name }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-      <div class="model-status" *ngIf="modelsLoading()">Loading installed models...</div>
-    </section>
-
     <div class="messages">
       <div class="empty-state" *ngIf="!renderedMessages().length && !isAsking()">
         Ask a question about your uploaded PDFs.
@@ -161,7 +145,7 @@
     </section>
 
     <form class="composer" (submit)="$event.preventDefault()">
-      <mat-form-field appearance="outline" class="composer-field">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="composer-field">
         <textarea
           matInput
           rows="3"
@@ -171,7 +155,14 @@
         ></textarea>
       </mat-form-field>
 
-      <button mat-flat-button color="primary" type="button" (click)="submitQuestion()" [disabled]="isAsking()">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="composer-submit"
+        (click)="submitQuestion()"
+        [disabled]="isAsking()"
+      >
         Send
       </button>
     </form>

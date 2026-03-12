@@ -8,14 +8,36 @@
       </div>
     </div>
 
-    <nav class="nav-links">
-      <a mat-button routerLink="/documents" routerLinkActive="active-link">
-        Documents
-      </a>
-      <a mat-button routerLink="/chat" routerLinkActive="active-link">
-        Chat
-      </a>
-    </nav>
+    <div class="toolbar-actions">
+      <div class="toolbar-model-shell" *ngIf="availableModels().length">
+        <span class="toolbar-model-caption">Model</span>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="toolbar-model-field">
+          <mat-select
+            aria-label="Chat model"
+            panelClass="toolbar-model-panel"
+            [value]="selectedModel()"
+            (valueChange)="updateSelectedModel($event)"
+            [disabled]="modelsLoading() || !availableModels().length"
+          >
+            <mat-select-trigger>
+              {{ chatModelService.getDisplayName(selectedModel()) }}
+            </mat-select-trigger>
+            <mat-option *ngFor="let model of availableModels()" [value]="model.name">
+              {{ chatModelService.getDisplayName(model.name) }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <nav class="nav-links">
+        <a mat-button routerLink="/documents" routerLinkActive="active-link">
+          Documents
+        </a>
+        <a mat-button routerLink="/chat" routerLinkActive="active-link">
+          Chat
+        </a>
+      </nav>
+    </div>
   </mat-toolbar>
 
   <main class="content">

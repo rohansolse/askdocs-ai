@@ -313,8 +313,9 @@
   flex: 1;
 }
 
-.composer button {
+.composer-submit {
   min-width: 112px;
+  align-self: flex-end;
 }
 
 .context-panel {
@@ -339,22 +340,6 @@
   color: var(--accent);
   font-size: 0.88rem;
   font-weight: 600;
-}
-
-.model-bar {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 0.25rem;
-}
-
-.model-field {
-  width: min(280px, 100%);
-}
-
-.model-status {
-  color: var(--text-muted);
-  font-size: 0.92rem;
 }
 
 .loading-state {
@@ -393,12 +378,4 @@
     align-items: stretch;
   }
 
-  .model-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .model-field {
-    width: 100%;
-  }
 }

@@ -116,6 +116,47 @@ body {
   background: #fafbfd;
 }
 
+.toolbar-model-panel.mat-mdc-select-panel {
+  margin-top: 0.45rem;
+  max-height: none;
+  overflow: hidden;
+  padding: 0.45rem;
+  border: 1px solid rgba(15, 92, 90, 0.12);
+  border-radius: 28px;
+  background: rgba(248, 251, 255, 0.96);
+  box-shadow: 0 18px 40px rgba(18, 47, 89, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.toolbar-model-panel .mat-mdc-option {
+  min-height: 52px;
+  margin: 0;
+  border-radius: 999px;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.toolbar-model-panel .mat-mdc-option .mdc-list-item__primary-text {
+  color: inherit;
+}
+
+.toolbar-model-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+.toolbar-model-panel .mat-mdc-option.mat-mdc-option-active {
+  background: rgba(15, 92, 90, 0.08);
+}
+
+.toolbar-model-panel .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: rgba(15, 92, 90, 0.14);
+}
+
+.toolbar-model-panel .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text {
+  font-weight: 800;
+}
+
+.toolbar-model-panel .mat-pseudo-checkbox-minimal {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .panel-card {
     border-radius: 18px;
