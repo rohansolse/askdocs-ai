@@ -1,13 +1,16 @@
 const asyncHandler = require('../utils/asyncHandler');
-const { processDocumentUpload } = require('../services/documentService');
+const { processMultipleDocumentUploads } = require('../services/documentService');
 const { listDocuments } = require('../services/vectorSearchService');
 
 const uploadDocument = asyncHandler(async (req, res) => {
-  const document = await processDocumentUpload(req.file);
+  const documents = await processMultipleDocumentUploads(req.files);
 
   res.status(201).json({
-    message: 'Document uploaded successfully.',
-    document
+    message:
+      documents.length === 1
+        ? 'Document uploaded successfully.'
+        : `${documents.length} documents uploaded successfully.`,
+    documents
   });
 });
 
@@ -23,4 +26,3 @@ module.exports = {
   uploadDocument,
   getDocuments
 };
-

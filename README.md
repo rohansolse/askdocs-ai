@@ -1,6 +1,6 @@
 # AskDocs AI
 
-AskDocs AI is a full-stack, local-first AI documentation chatbot. Users upload PDF documents, the backend extracts and chunks the text, generates embeddings through Ollama, stores vectors in PostgreSQL with `pgvector`, and answers questions through a grounded RAG workflow.
+AskDocs AI is a full-stack, local-first AI documentation chatbot. Users upload supported documents, the backend extracts and chunks the text, generates embeddings through Ollama, stores vectors in PostgreSQL with `pgvector`, and answers questions through a grounded RAG workflow.
 
 The assistant is configured to answer only from uploaded documents. If no relevant context is found, it returns:
 
@@ -19,6 +19,8 @@ The assistant is configured to answer only from uploaded documents. If no releva
 - Multer
 - Axios
 - pdf-parse
+- Mammoth for `.docx`
+- Local Tesseract OCR for images
 
 ### Database
 - PostgreSQL
@@ -75,6 +77,7 @@ Install these once on your machine:
 - PostgreSQL
 - `pgvector` extension for PostgreSQL
 - Ollama
+- Tesseract OCR for image uploads
 
 Optional but useful:
 
@@ -128,6 +131,19 @@ RAG_MIN_SIMILARITY=0.35
 CHUNK_SIZE=1200
 CHUNK_OVERLAP=200
 ```
+
+## Supported Upload Types
+
+The ingestion pipeline currently supports:
+
+- `.pdf`
+- `.docx`
+- `.txt`
+- `.png`
+- `.jpg`
+- `.jpeg`
+
+Images are processed locally through Tesseract OCR before chunking and embedding.
 
 ## PostgreSQL Setup
 
@@ -217,6 +233,22 @@ curl http://localhost:11434/api/embed \
 
 If this fails, uploads will also fail.
 
+## Tesseract OCR Setup
+
+Image documents are processed locally with the `tesseract` binary.
+
+On macOS:
+
+```bash
+brew install tesseract
+```
+
+Verify installation:
+
+```bash
+tesseract --version
+```
+
 ## Running The Project
 
 From the repo root:
@@ -249,8 +281,12 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 ## API Overview
 
 ### `POST /api/documents/upload`
-- Accepts a PDF file upload using the `file` field.
-- Extracts text.
+- Accepts a supported document file using the `file` field.
+- Extracts text depending on file type:
+  - PDF via `pdf-parse`
+  - DOCX via `mammoth`
+  - TXT via direct file read
+  - image files via local Tesseract OCR
 - Splits text into chunks.
 - Generates embeddings with Ollama.
 - Stores metadata and vectors in PostgreSQL.
@@ -289,11 +325,11 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 npm run dev
 ```
 
-## How To Test PDF Upload
+## How To Test Document Upload
 
 1. Open `http://localhost:4200`.
 2. Go to the `Documents` page.
-3. Choose a PDF file.
+3. Choose a supported file.
 4. Click `Upload`.
 5. Verify the uploaded document appears in the list.
 
@@ -306,7 +342,7 @@ curl -X POST http://localhost:3000/api/documents/upload \
 
 ## How To Test Chat Flow
 
-1. Upload one or more PDFs first.
+1. Upload one or more supported documents first.
 2. Open the `Chat` page.
 3. Ask a question that should be answerable from the uploaded documents.
 4. Verify the assistant responds with grounded content.
@@ -385,6 +421,14 @@ Also install the chat model:
 ollama pull llama3
 ```
 
+### `Tesseract OCR is not installed`
+
+Install Tesseract locally:
+
+```bash
+brew install tesseract
+```
+
 ### `CREATE EXTENSION vector` fails
 
 `pgvector` is not installed in your PostgreSQL server. Install `pgvector` for your PostgreSQL version first, then rerun the schema.
@@ -402,6 +446,7 @@ ollama pull llama3
 - Install PostgreSQL locally.
 - Install the `pgvector` extension for your PostgreSQL instance.
 - Install Ollama locally.
+- Install Tesseract locally if you want image uploads.
 - Pull `llama3` and `nomic-embed-text`.
 - Copy `backend/.env.example` to `backend/.env`.
 - Run `npm install`.

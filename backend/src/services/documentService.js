@@ -1,22 +1,31 @@
 const fs = require('fs/promises');
 const { withTransaction } = require('../config/database');
 const AppError = require('../utils/appError');
-const { extractTextFromPdf } = require('./pdfParserService');
+const { getDocumentType } = require('../config/documentTypes');
+const { extractTextByDocumentType } = require('./documentTextExtractorService');
 const { splitIntoChunks } = require('./textChunkService');
 const { generateEmbedding } = require('./embeddingService');
 const { toVectorLiteral } = require('./vectorSearchService');
 
 const processDocumentUpload = async (file) => {
   if (!file) {
-    throw new AppError('PDF file is required.', 400);
+    throw new AppError('A supported document file is required.', 400);
   }
 
   try {
-    const rawText = await extractTextFromPdf(file.path);
+    const documentType = getDocumentType(file);
+    if (!documentType) {
+      throw new AppError('Unsupported document type.', 400);
+    }
+
+    const rawText = await extractTextByDocumentType({
+      filePath: file.path,
+      documentType
+    });
     const chunks = splitIntoChunks(rawText);
 
     if (!chunks.length) {
-      throw new AppError('No readable text was found in the uploaded PDF.', 400);
+      throw new AppError('No readable text was found in the uploaded document.', 400);
     }
 
     const chunkRecords = [];
@@ -33,10 +42,16 @@ const processDocumentUpload = async (file) => {
 
     const document = await withTransaction(async (client) => {
       const documentInsert = await client.query(
-        `INSERT INTO documents (original_name, stored_name)
-         VALUES ($1, $2)
-         RETURNING id, original_name AS "originalName", stored_name AS "storedName", uploaded_at AS "uploadedAt"`,
-        [file.originalname, file.filename]
+        `INSERT INTO documents (original_name, stored_name, file_type, mime_type)
+         VALUES ($1, $2, $3, $4)
+         RETURNING
+           id,
+           original_name AS "originalName",
+           stored_name AS "storedName",
+           file_type AS "fileType",
+           mime_type AS "mimeType",
+           uploaded_at AS "uploadedAt"`,
+        [file.originalname, file.filename, documentType, file.mimetype]
       );
 
       const savedDocument = documentInsert.rows[0];
@@ -67,6 +82,17 @@ const processDocumentUpload = async (file) => {
 };
 
 module.exports = {
-  processDocumentUpload
-};
+  processDocumentUpload,
+  processMultipleDocumentUploads: async (files) => {
+    if (!Array.isArray(files) || !files.length) {
+      throw new AppError('At least one supported document file is required.', 400);
+    }
 
+    const uploadedDocuments = [];
+    for (const file of files) {
+      uploadedDocuments.push(await processDocumentUpload(file));
+    }
+
+    return uploadedDocuments;
+  }
+};

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -57,8 +57,7 @@ export class ChatPageComponent {
   readonly errorMessage = signal('');
   readonly selectionErrorMessage = signal('');
   readonly questionControl = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required]
+    nonNullable: true
   });
   readonly documents = this.documentSelection.documents;
   readonly selectedDocumentIds = this.documentSelection.selectedDocumentIds;

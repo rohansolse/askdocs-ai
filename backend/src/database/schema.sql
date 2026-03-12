@@ -4,8 +4,16 @@ CREATE TABLE IF NOT EXISTS documents (
   id SERIAL PRIMARY KEY,
   original_name TEXT NOT NULL,
   stored_name TEXT NOT NULL,
+  file_type TEXT NOT NULL DEFAULT 'pdf',
+  mime_type TEXT NOT NULL DEFAULT 'application/pdf',
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE documents
+  ADD COLUMN IF NOT EXISTS file_type TEXT NOT NULL DEFAULT 'pdf';
+
+ALTER TABLE documents
+  ADD COLUMN IF NOT EXISTS mime_type TEXT NOT NULL DEFAULT 'application/pdf';
 
 CREATE TABLE IF NOT EXISTS document_chunks (
   id SERIAL PRIMARY KEY,
@@ -40,4 +48,3 @@ CREATE TABLE IF NOT EXISTS messages (
 
 CREATE INDEX IF NOT EXISTS idx_messages_chat_id
   ON messages (chat_id, created_at);
-

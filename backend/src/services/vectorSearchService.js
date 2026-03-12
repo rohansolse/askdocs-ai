@@ -9,6 +9,8 @@ const listDocuments = async () => {
       d.id,
       d.original_name AS "originalName",
       d.stored_name AS "storedName",
+      d.file_type AS "fileType",
+      d.mime_type AS "mimeType",
       d.uploaded_at AS "uploadedAt",
       COUNT(dc.id)::int AS "chunkCount"
     FROM documents d

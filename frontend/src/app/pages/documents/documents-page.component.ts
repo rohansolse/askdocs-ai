@@ -39,7 +39,7 @@ export class DocumentsPageComponent {
   readonly isLoading = signal(false);
   readonly isUploading = signal(false);
   readonly uploadProgress = signal<number | null>(null);
-  readonly selectedFile = signal<File | null>(null);
+  readonly selectedFiles = signal<File[]>([]);
   readonly errorMessage = signal('');
   readonly documents = this.documentSelection.documents;
   readonly selectedDocumentIds = this.documentSelection.selectedDocumentIds;
@@ -62,6 +62,7 @@ export class DocumentsPageComponent {
 
     return `${selected} of ${total} selected`;
   });
+  readonly supportedFormats = '.pdf,.docx,.txt,.png,.jpg,.jpeg';
 
   ngOnInit(): void {
     this.loadDocuments();
@@ -69,16 +70,16 @@ export class DocumentsPageComponent {
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
+    const files = input.files ? Array.from(input.files) : [];
 
-    this.selectedFile.set(file);
+    this.selectedFiles.set(files);
     this.uploadProgress.set(null);
     this.errorMessage.set('');
   }
 
   uploadDocument(): void {
-    const file = this.selectedFile();
-    if (!file || this.isUploading()) {
+    const files = this.selectedFiles();
+    if (!files.length || this.isUploading()) {
       return;
     }
 
@@ -87,7 +88,7 @@ export class DocumentsPageComponent {
     this.errorMessage.set('');
 
     this.documentApi
-      .uploadDocument(file)
+      .uploadDocuments(files)
       .pipe(
         finalize(() => this.isUploading.set(false)),
         takeUntilDestroyed(this.destroyRef)
@@ -95,16 +96,23 @@ export class DocumentsPageComponent {
       .subscribe({
         next: (event) => {
           if (event.type === HttpEventType.UploadProgress) {
-            const total = event.total || file.size;
+            const total = event.total || files.reduce((sum, file) => sum + file.size, 0);
             this.uploadProgress.set(Math.round((event.loaded / total) * 100));
           }
 
           if (event.type === HttpEventType.Response) {
-            this.selectedFile.set(null);
+            this.selectedFiles.set([]);
             this.uploadProgress.set(null);
-            this.snackBar.open('Document uploaded successfully.', 'Close', {
+            const uploadedCount = event.body?.documents.length || files.length;
+            this.snackBar.open(
+              uploadedCount === 1
+                ? 'Document uploaded successfully.'
+                : `${uploadedCount} documents uploaded successfully.`,
+              'Close',
+              {
               duration: 3000
-            });
+              }
+            );
             this.loadDocuments();
           }
         },
@@ -119,6 +127,35 @@ export class DocumentsPageComponent {
 
   trackByDocument(index: number, document: DocumentSummary): number {
     return document.id;
+  }
+
+  formatDocumentType(document: DocumentSummary): string {
+    switch (document.fileType) {
+      case 'pdf':
+        return 'PDF';
+      case 'docx':
+        return 'DOCX';
+      case 'text':
+        return 'TXT';
+      case 'image':
+        return 'IMAGE';
+      default:
+        return document.fileType.toUpperCase();
+    }
+  }
+
+  selectedFilesLabel(): string {
+    const files = this.selectedFiles();
+
+    if (!files.length) {
+      return '';
+    }
+
+    if (files.length === 1) {
+      return files[0].name;
+    }
+
+    return `${files.length} files selected`;
   }
 
   isDocumentSelected(documentId: number): boolean {

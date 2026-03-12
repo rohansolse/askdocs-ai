@@ -7,13 +7,15 @@ export interface DocumentSummary {
   id: number;
   originalName: string;
   storedName: string;
+  fileType: 'pdf' | 'docx' | 'text' | 'image' | string;
+  mimeType: string;
   uploadedAt: string;
   chunkCount: number;
 }
 
 export interface UploadDocumentResponse {
   message: string;
-  document: DocumentSummary;
+  documents: DocumentSummary[];
 }
 
 @Injectable({
@@ -29,9 +31,11 @@ export class DocumentApiService {
       .pipe(map((response) => response.documents));
   }
 
-  uploadDocument(file: File): Observable<HttpEvent<UploadDocumentResponse>> {
+  uploadDocuments(files: File[]): Observable<HttpEvent<UploadDocumentResponse>> {
     const formData = new FormData();
-    formData.append('file', file);
+    for (const file of files) {
+      formData.append('files', file);
+    }
 
     return this.http.post<UploadDocumentResponse>(this.apiBase.getUrl('/documents/upload'), formData, {
       observe: 'events',
@@ -39,4 +43,3 @@ export class DocumentApiService {
     });
   }
 }
-

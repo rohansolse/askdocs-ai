@@ -49,6 +49,11 @@
   font-weight: 600;
 }
 
+.supported-formats {
+  margin-top: -0.35rem;
+  font-size: 0.94rem;
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;

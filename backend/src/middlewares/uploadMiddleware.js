@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 const AppError = require('../utils/appError');
+const { isSupportedUpload, SUPPORTED_EXTENSION_LABEL } = require('../config/documentTypes');
 
 const uploadDirectory = path.resolve(__dirname, '..', 'uploads');
 fs.mkdirSync(uploadDirectory, { recursive: true });
@@ -15,8 +16,10 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype !== 'application/pdf') {
-    cb(new AppError('Only PDF files are allowed.', 400));
+  if (!isSupportedUpload(file)) {
+    cb(
+      new AppError(`Unsupported file type. Allowed types: ${SUPPORTED_EXTENSION_LABEL}.`, 400)
+    );
     return;
   }
 
@@ -32,4 +35,3 @@ const upload = multer({
 });
 
 module.exports = upload;
-

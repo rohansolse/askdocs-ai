@@ -2,28 +2,32 @@
   <section class="hero panel-card">
     <div class="hero-copy">
       <p class="eyebrow">Document ingestion</p>
-      <h1 class="hero-title">Upload PDFs and turn them into local RAG context.</h1>
+      <h1 class="hero-title">Upload documents and turn them into local RAG context.</h1>
       <p class="section-subtitle">
-        Files are parsed locally through the backend, chunked, embedded with Ollama, and stored in
-        PostgreSQL with pgvector.
+        PDFs, DOCX files, plain text files, and images are parsed locally through the backend,
+        chunked, embedded with Ollama, and stored in PostgreSQL with pgvector.
       </p>
     </div>
 
     <div class="hero-actions">
-      <input #fileInput type="file" accept="application/pdf" hidden (change)="onFileSelected($event)">
+      <input #fileInput type="file" [accept]="supportedFormats" multiple hidden (change)="onFileSelected($event)">
       <button mat-flat-button color="primary" type="button" (click)="fileInput.click()">
-        Choose PDF
+        Choose documents
       </button>
       <button
         mat-stroked-button
         type="button"
         (click)="uploadDocument()"
-        [disabled]="!selectedFile() || isUploading()"
+        [disabled]="!selectedFiles().length || isUploading()"
       >
         Upload
       </button>
-      <div class="file-name" *ngIf="selectedFile() as file">{{ file.name }}</div>
+      <div class="file-name" *ngIf="selectedFiles().length">{{ selectedFilesLabel() }}</div>
     </div>
+
+    <p class="section-subtitle supported-formats">
+      Supported formats: PDF, DOCX, TXT, PNG, JPG, JPEG
+    </p>
 
     <mat-progress-bar
       *ngIf="isUploading() && uploadProgress() !== null"
@@ -58,7 +62,7 @@
     </div>
 
     <div class="empty-state" *ngIf="!isLoading() && !documents().length">
-      No documents uploaded yet. Start by adding a PDF above.
+      No documents uploaded yet. Start by adding a document above.
     </div>
 
     <mat-list *ngIf="!isLoading() && documents().length">
@@ -71,7 +75,8 @@
         ></mat-checkbox>
         <div matListItemTitle>{{ document.originalName }}</div>
         <div matListItemLine>
-          {{ document.chunkCount }} chunks • {{ document.uploadedAt | date: 'medium' }}
+          {{ formatDocumentType(document) }} • {{ document.chunkCount }} chunks •
+          {{ document.uploadedAt | date: 'medium' }}
         </div>
       </mat-list-item>
     </mat-list>

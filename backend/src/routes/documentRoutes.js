@@ -4,8 +4,7 @@ const { uploadDocument, getDocuments } = require('../controllers/documentControl
 
 const router = Router();
 
-router.post('/upload', upload.single('file'), uploadDocument);
+router.post('/upload', upload.array('files', 20), uploadDocument);
 router.get('/', getDocuments);
 
 module.exports = router;
-
