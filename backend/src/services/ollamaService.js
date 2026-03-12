@@ -54,10 +54,10 @@ const getEmbedding = async (input) => {
   }
 };
 
-const generateChatCompletion = async (messages) => {
+const generateChatCompletion = async (messages, model = env.ollama.chatModel) => {
   try {
     const response = await ollamaClient.post('/api/chat', {
-      model: env.ollama.chatModel,
+      model,
       messages,
       stream: false,
       options: {
@@ -81,7 +81,28 @@ const generateChatCompletion = async (messages) => {
   }
 };
 
+const listInstalledModels = async () => {
+  try {
+    const response = await ollamaClient.get('/api/tags');
+    const models = Array.isArray(response.data?.models) ? response.data.models : [];
+
+    return models.map((model) => ({
+      name: model.name,
+      size: model.size,
+      modifiedAt: model.modified_at
+    }));
+  } catch (error) {
+    throw new AppError(
+      error.response?.data?.error ||
+        error.message ||
+        'Failed to load installed models from Ollama.',
+      502
+    );
+  }
+};
+
 module.exports = {
   getEmbedding,
-  generateChatCompletion
+  generateChatCompletion,
+  listInstalledModels
 };

@@ -300,7 +300,9 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 ```json
 {
   "question": "What does the uploaded document say about the setup?",
-  "chatId": 1
+  "chatId": 1,
+  "selectedDocumentIds": [1, 2],
+  "model": "llama3:latest"
 }
 ```
 
@@ -309,6 +311,10 @@ By default, the frontend calls the backend at `http://localhost:3000/api`. If ne
 - Builds a grounded prompt from retrieved chunks only.
 - Calls the Ollama chat model.
 - Saves user and assistant messages to chat history.
+
+### `GET /api/chat/models`
+- Returns the installed Ollama chat models for the frontend dropdown.
+- Filters out embedding-only models such as `nomic-embed-text`.
 
 ### `GET /api/chat/history`
 - Returns saved chats with messages.

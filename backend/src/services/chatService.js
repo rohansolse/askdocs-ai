@@ -1,10 +1,12 @@
 const { query, withTransaction } = require('../config/database');
+const env = require('../config/env');
 const AppError = require('../utils/appError');
 const { generateEmbedding } = require('./embeddingService');
 const { searchSimilarChunks } = require('./vectorSearchService');
-const { generateChatCompletion } = require('./ollamaService');
+const { generateChatCompletion, listInstalledModels } = require('./ollamaService');
 
 const FALLBACK_ANSWER = 'This information is not available in the uploaded documents.';
+const normalizeModelName = (value) => (value || '').trim().toLowerCase().replace(/:latest$/, '');
 
 const createTitleFromQuestion = (question) => {
   const trimmed = question.trim().replace(/\s+/g, ' ');
@@ -59,7 +61,12 @@ const buildGroundedMessages = (question, contextChunks) => {
   ];
 };
 
-const askQuestion = async ({ question, chatId, selectedDocumentIds: rawSelectedDocumentIds }) => {
+const askQuestion = async ({
+  question,
+  chatId,
+  selectedDocumentIds: rawSelectedDocumentIds,
+  model
+}) => {
   const trimmedQuestion = question?.trim();
   if (!trimmedQuestion) {
     throw new AppError('Question is required.', 400);
@@ -79,9 +86,13 @@ const askQuestion = async ({ question, chatId, selectedDocumentIds: rawSelectedD
   const relevantChunks = await searchSimilarChunks(questionEmbedding, {
     documentIds: selectedDocumentIds
   });
+  const selectedModel = typeof model === 'string' && model.trim() ? model.trim() : env.ollama.chatModel;
   const answer =
     relevantChunks.length > 0
-      ? await generateChatCompletion(buildGroundedMessages(trimmedQuestion, relevantChunks))
+      ? await generateChatCompletion(
+          buildGroundedMessages(trimmedQuestion, relevantChunks),
+          selectedModel
+        )
       : FALLBACK_ANSWER;
 
   const chat = await withTransaction(async (client) => {
@@ -105,6 +116,7 @@ const askQuestion = async ({ question, chatId, selectedDocumentIds: rawSelectedD
   return {
     chatId: chat.id,
     title: chat.title,
+    model: selectedModel,
     answer,
     context: relevantChunks.map((chunk) => ({
       documentId: chunk.documentId,
@@ -140,8 +152,27 @@ const getChatHistory = async () => {
   }));
 };
 
+const getAvailableChatModels = async () => {
+  const models = await listInstalledModels();
+  const filteredModels = models.filter(
+    (model) =>
+      normalizeModelName(model.name) !== normalizeModelName(env.ollama.embedModel) &&
+      !normalizeModelName(model.name).includes('embed')
+  );
+
+  return {
+    defaultModel: env.ollama.chatModel,
+    models: filteredModels.map((model) => ({
+      name: model.name,
+      size: model.size,
+      modifiedAt: model.modifiedAt
+    }))
+  };
+};
+
 module.exports = {
   FALLBACK_ANSWER,
   askQuestion,
-  getChatHistory
+  getChatHistory,
+  getAvailableChatModels
 };

@@ -22,11 +22,13 @@ export interface AskQuestionRequest {
   question: string;
   chatId?: number;
   selectedDocumentIds: number[];
+  model?: string;
 }
 
 export interface AskQuestionResponse {
   chatId: number;
   title: string;
+  model: string;
   answer: string;
   context: Array<{
     documentId: number;
@@ -34,6 +36,12 @@ export interface AskQuestionResponse {
     chunkIndex: number;
     similarity: number;
   }>;
+}
+
+export interface ChatModelSummary {
+  name: string;
+  size: number;
+  modifiedAt: string;
 }
 
 @Injectable({
@@ -47,6 +55,12 @@ export class ChatApiService {
     return this.http
       .get<{ chats: ChatHistory[] }>(this.apiBase.getUrl('/chat/history'))
       .pipe(map((response) => response.chats));
+  }
+
+  getModels(): Observable<{ defaultModel: string; models: ChatModelSummary[] }> {
+    return this.http.get<{ defaultModel: string; models: ChatModelSummary[] }>(
+      this.apiBase.getUrl('/chat/models')
+    );
   }
 
   askQuestion(payload: AskQuestionRequest): Observable<AskQuestionResponse> {
